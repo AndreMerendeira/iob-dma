@@ -10,7 +10,8 @@
 `define R_DATA    `R_STATES_W'h1 //Read data
 
 module dma_axi_r #(
-		   parameter DMA_DATA_WIDTH = 32
+		   parameter DMA_DATA_WIDTH = 32,
+		   parameter ADDR_W = `AXI_ADDR_W
 		   ) (
 
 		      // system inputs
@@ -20,7 +21,7 @@ module dma_axi_r #(
     		      // Databus interface
     		      output reg 		      ready,
     		      input 			      valid,
-    		      input [`AXI_ADDR_W-1:0] 	      addr,
+    		      input [ADDR_W-1:0] 	      addr,
     		      output [DMA_DATA_WIDTH-1:0]     rdata,
 
 		      // DMA configuration
@@ -29,7 +30,7 @@ module dma_axi_r #(
 		      
 		      // Master Interface Read Address
 		      output wire [`AXI_ID_W-1:0]     m_axi_arid,
-		      output wire [`AXI_ADDR_W-1:0]   m_axi_araddr,
+		      output wire [ADDR_W-1:0] 	      m_axi_araddr,
 		      output wire [`AXI_LEN_W-1:0]    m_axi_arlen,
 		      output wire [`AXI_SIZE_W-1:0]   m_axi_arsize,
 		      output wire [`AXI_BURST_W-1:0]  m_axi_arburst,

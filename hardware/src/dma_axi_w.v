@@ -12,7 +12,8 @@
 
 module dma_axi_w # (
 		    parameter USE_RAM = 1,
-		    parameter DMA_DATA_WIDTH = 32
+		    parameter DMA_DATA_WIDTH = 32,
+		    parameter ADDR_W = `AXI_ADDR_W
 		    ) (
 
 		       // system inputs
@@ -22,7 +23,7 @@ module dma_axi_w # (
     		       // Databus interface
     		       output reg 			 ready,
     		       input 				 valid,
-    		       input [`AXI_ADDR_W-1:0] 		 addr,
+    		       input [ADDR_W-1:0] 		 addr,
     		       input [DMA_DATA_WIDTH-1:0] 	 wdata,
     		       input [DMA_DATA_WIDTH/8-1:0] 	 wstrb,
 
@@ -32,7 +33,7 @@ module dma_axi_w # (
 		       
 		       // Master Interface Write Address
 		       output wire [`AXI_ID_W-1:0] 	 m_axi_awid,
-		       output wire [`AXI_ADDR_W-1:0] 	 m_axi_awaddr,
+		       output wire [ADDR_W-1:0] 	 m_axi_awaddr,
 		       output wire [`AXI_LEN_W-1:0] 	 m_axi_awlen,
 		       output wire [`AXI_SIZE_W-1:0] 	 m_axi_awsize,
 		       output wire [`AXI_BURST_W-1:0] 	 m_axi_awburst,

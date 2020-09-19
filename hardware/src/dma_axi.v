@@ -3,7 +3,11 @@
 `include "dma_axi.vh"
 
 module dma_axi #(
-		 parameter DMA_DATA_WIDTH = 32
+		 parameter DMA_DATA_WIDTH = 32,
+		 // AXI4 interface parameters
+		 parameter ADDR_W = `AXI_ADDR_W,
+		 parameter DATA_W = DMA_DATA_WIDTH
+
 		 ) (
 
 		    // system inputs
@@ -15,7 +19,7 @@ module dma_axi #(
 
 		    // Native i/f - can't include from INTERCON because address_w = 6
 		    input 			 valid,
-		    input [`AXI_ADDR_W-1:0] 	 address,
+		    input [ADDR_W-1:0] 		 address,
 		    input [DMA_DATA_WIDTH-1:0] 	 wdata,
 		    input [DMA_DATA_WIDTH/8-1:0] wstrb,
 		    output [DMA_DATA_WIDTH-1:0]  rdata,
@@ -38,7 +42,8 @@ module dma_axi #(
    // AXI_DMA READ
    dma_axi_r 
      #(
-       .DMA_DATA_WIDTH(DMA_DATA_WIDTH)
+       .DMA_DATA_WIDTH(DMA_DATA_WIDTH),
+       .ADDR_W(ADDR_W)
        )dma_r (
 	       .clk(clk),
 	       .rst(rst),
@@ -79,7 +84,8 @@ module dma_axi #(
    dma_axi_w 
      # (
 	.USE_RAM(1),
-	.DMA_DATA_WIDTH(DMA_DATA_WIDTH)
+	.DMA_DATA_WIDTH(DMA_DATA_WIDTH),
+	.ADDR_W(ADDR_W)
 	) dma_w (
 		 .clk(clk),
 		 .rst(rst),
