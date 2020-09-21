@@ -10,7 +10,7 @@
 `define R_DATA    `R_STATES_W'h1 //Read data
 
 module dma_axi_r #(
-		   parameter DMA_DATA_WIDTH = 32,
+		   parameter DMA_DATA_W = 32,
 		   parameter ADDR_W = `AXI_ADDR_W
 		   ) (
 
@@ -22,7 +22,7 @@ module dma_axi_r #(
     		      output reg 		      ready,
     		      input 			      valid,
     		      input [ADDR_W-1:0] 	      addr,
-    		      output [DMA_DATA_WIDTH-1:0]     rdata,
+    		      output [DMA_DATA_W-1:0]     rdata,
 
 		      // DMA configuration
 		      input [`AXI_LEN_W-1:0] 	      dma_len,
@@ -43,7 +43,7 @@ module dma_axi_r #(
 
 		      // Master Interface Read Data
 		      // input wire [`AXI_ID_W-1:0]     m_axi_rid,
-		      input wire [DMA_DATA_WIDTH-1:0] m_axi_rdata,
+		      input wire [DMA_DATA_W-1:0] m_axi_rdata,
 		      input wire [`AXI_RESP_W-1:0]    m_axi_rresp,
 		      input wire 		      m_axi_rlast,
 		      input wire 		      m_axi_rvalid,
@@ -66,7 +66,7 @@ module dma_axi_r #(
    assign m_axi_arid = `AXI_ID_W'b0;
    assign m_axi_araddr = addr;
    assign m_axi_arlen = len_r; //number of trasfers per burst
-   assign m_axi_arsize = $clog2(DMA_DATA_WIDTH/8); //INCR interval
+   assign m_axi_arsize = $clog2(DMA_DATA_W/8); //INCR interval
    assign m_axi_arburst = `AXI_BURST_W'b01; //INCR
    assign m_axi_arlock = `AXI_LOCK_W'b0;
    assign m_axi_arcache = `AXI_CACHE_W'h2;

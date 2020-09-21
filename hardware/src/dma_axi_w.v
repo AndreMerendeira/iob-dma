@@ -12,7 +12,7 @@
 
 module dma_axi_w # (
 		    parameter USE_RAM = 1,
-		    parameter DMA_DATA_WIDTH = 32,
+		    parameter DMA_DATA_W = 32,
 		    parameter ADDR_W = `AXI_ADDR_W
 		    ) (
 
@@ -24,8 +24,8 @@ module dma_axi_w # (
     		       output reg 			 ready,
     		       input 				 valid,
     		       input [ADDR_W-1:0] 		 addr,
-    		       input [DMA_DATA_WIDTH-1:0] 	 wdata,
-    		       input [DMA_DATA_WIDTH/8-1:0] 	 wstrb,
+    		       input [DMA_DATA_W-1:0] 	 wdata,
+    		       input [DMA_DATA_W/8-1:0] 	 wstrb,
 
 		       // DMA configuration
 		       input [`AXI_LEN_W-1:0] 		 dma_len,
@@ -45,8 +45,8 @@ module dma_axi_w # (
 		       input wire 			 m_axi_awready,
 
 		       // Master Interface Write Data
-		       output wire [DMA_DATA_WIDTH-1:0]  m_axi_wdata,
-		       output reg [DMA_DATA_WIDTH/8-1:0] m_axi_wstrb,
+		       output wire [DMA_DATA_W-1:0]  m_axi_wdata,
+		       output reg [DMA_DATA_W/8-1:0] m_axi_wstrb,
 		       output reg 			 m_axi_wlast,
 		       output reg 			 m_axi_wvalid,
 		       input wire 			 m_axi_wready,
@@ -76,7 +76,7 @@ module dma_axi_w # (
    assign m_axi_awid = `AXI_ID_W'b0;
    assign m_axi_awaddr = addr;
    assign m_axi_awlen = dma_len; //number of trasfers per burst
-   assign m_axi_awsize = $clog2(DMA_DATA_WIDTH/8); //INCR interval
+   assign m_axi_awsize = $clog2(DMA_DATA_W/8); //INCR interval
    assign m_axi_awburst = `AXI_BURST_W'b01; //INCR
    assign m_axi_awlock = `AXI_LOCK_W'b0;
    assign m_axi_awcache = `AXI_CACHE_W'h2;
@@ -89,7 +89,7 @@ module dma_axi_w # (
    // delays
    always @ (posedge rst, posedge clk)
      if (rst) begin
-	m_axi_wstrb <= {DMA_DATA_WIDTH/8{1'b0}};
+	m_axi_wstrb <= {DMA_DATA_W/8{1'b0}};
 	m_axi_wlast <= 0;
 	m_axi_wvalid <= 0;
      end else begin
