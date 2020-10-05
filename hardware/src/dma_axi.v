@@ -11,33 +11,36 @@ module dma_axi #(
 		 ) (
 
 		    // system inputs
-		    input 			 clk,
-		    input 			 rst,
+		    input 		     clk,
+		    input 		     rst,
 
 		    // AXI4 Master i/f
                     `include "cpu_axi4_m_if.v"
 
 		    // Native i/f - can't include from INTERCON because address_w = 6
-		    input 			 valid,
-		    input [AXI_ADDR_W-1:0] 		 address,
-		    input [DMA_DATA_W-1:0] 	 wdata,
+		    input 		     valid,
+		    input [AXI_ADDR_W-1:0]   address,
+		    input [DMA_DATA_W-1:0]   wdata,
 		    input [DMA_DATA_W/8-1:0] wstrb,
 		    output [DMA_DATA_W-1:0]  rdata,
-		    output 			 ready,
+		    output 		     ready,
 		    
 		    // DMA signals
-		    input [`AXI_LEN_W-1:0] 	 dma_len,
-		    output 			 dma_ready
-						 
+		    input [`AXI_LEN_W-1:0]   dma_len,
+		    output 		     dma_ready,
+		    output 		     error
+		    
 		    );
 
    // internal wires
    wire 				   ready_r, ready_w;
    wire 				   dma_ready_r, dma_ready_w;
+   wire 				   error_r, error_w;
    
    // assign outputs
    assign ready = (|wstrb) ? ready_w : ready_r;
    assign dma_ready = dma_ready_r && dma_ready_w;
+   assign error = error_r | error_w;
    
    // AXI_DMA READ
    dma_axi_r 
@@ -56,6 +59,7 @@ module dma_axi #(
 	       // DMA configuration
 	       .dma_len  (dma_len),
 	       .dma_ready(dma_ready_r),
+	       .error(error_r),
 	       //address read
 	       .m_axi_arid(m_axi_arid), 
 	       .m_axi_araddr(m_axi_araddr), 
@@ -98,6 +102,7 @@ module dma_axi #(
 		 // DMA configurations
 		 .dma_len  (dma_len),
 		 .dma_ready(dma_ready_w),
+		 .error(error_w),
 		 // Address write
 		 .m_axi_awid(m_axi_awid), 
 		 .m_axi_awaddr(m_axi_awaddr), 

@@ -15,45 +15,46 @@ module dma_axi_r #(
 		   ) (
 
 		      // system inputs
-		      input 			      clk,
-		      input 			      rst,
+		      input 			     clk,
+		      input 			     rst,
 
     		      // Databus interface
-    		      output reg 		      ready,
-    		      input 			      valid,
-    		      input [ADDR_W-1:0] 	      addr,
-    		      output [DMA_DATA_W-1:0]     rdata,
+    		      output reg 		     ready,
+    		      input 			     valid,
+    		      input [ADDR_W-1:0] 	     addr,
+    		      output [DMA_DATA_W-1:0] 	     rdata,
 
 		      // DMA configuration
-		      input [`AXI_LEN_W-1:0] 	      dma_len,
-		      output reg 		      dma_ready,
+		      input [`AXI_LEN_W-1:0] 	     dma_len,
+		      output reg 		     dma_ready,
+		      output 			     error,
 		      
 		      // Master Interface Read Address
-		      output wire [`AXI_ID_W-1:0]     m_axi_arid,
-		      output wire [ADDR_W-1:0] 	      m_axi_araddr,
-		      output wire [`AXI_LEN_W-1:0]    m_axi_arlen,
-		      output wire [`AXI_SIZE_W-1:0]   m_axi_arsize,
-		      output wire [`AXI_BURST_W-1:0]  m_axi_arburst,
-		      output wire [`AXI_LOCK_W-1:0]   m_axi_arlock,
-		      output wire [`AXI_CACHE_W-1:0]  m_axi_arcache,
-		      output wire [`AXI_PROT_W-1:0]   m_axi_arprot,
-		      output wire [`AXI_QOS_W-1:0]    m_axi_arqos,
-		      output reg 		      m_axi_arvalid,
-		      input wire 		      m_axi_arready,
+		      output wire [`AXI_ID_W-1:0]    m_axi_arid,
+		      output wire [ADDR_W-1:0] 	     m_axi_araddr,
+		      output wire [`AXI_LEN_W-1:0]   m_axi_arlen,
+		      output wire [`AXI_SIZE_W-1:0]  m_axi_arsize,
+		      output wire [`AXI_BURST_W-1:0] m_axi_arburst,
+		      output wire [`AXI_LOCK_W-1:0]  m_axi_arlock,
+		      output wire [`AXI_CACHE_W-1:0] m_axi_arcache,
+		      output wire [`AXI_PROT_W-1:0]  m_axi_arprot,
+		      output wire [`AXI_QOS_W-1:0]   m_axi_arqos,
+		      output reg 		     m_axi_arvalid,
+		      input wire 		     m_axi_arready,
 
 		      // Master Interface Read Data
 		      // input wire [`AXI_ID_W-1:0]     m_axi_rid,
-		      input wire [DMA_DATA_W-1:0] m_axi_rdata,
-		      input wire [`AXI_RESP_W-1:0]    m_axi_rresp,
-		      input wire 		      m_axi_rlast,
-		      input wire 		      m_axi_rvalid,
-		      output reg 		      m_axi_rready
+		      input wire [DMA_DATA_W-1:0]    m_axi_rdata,
+		      input wire [`AXI_RESP_W-1:0]   m_axi_rresp,
+		      input wire 		     m_axi_rlast,
+		      input wire 		     m_axi_rvalid,
+		      output reg 		     m_axi_rready
 		      );
    
    // counter, state and error regs
    reg [`AXI_LEN_W-1:0] 			      counter_int, counter_int_nxt;
    reg [`R_STATES_W-1:0] 			      state, state_nxt;
-   reg 						      error, error_nxt;
+   reg 						      error_int, error_nxt;
 
    // dma ready to receive run command
    reg 				       dma_ready_nxt;
@@ -62,6 +63,9 @@ module dma_axi_r #(
    reg [`AXI_LEN_W-1:0]		       len_r;
    reg 				       m_axi_arvalid_int;
 
+   //output error
+   assign error = error_int;
+   
    // Address read constants
    assign m_axi_arid = `AXI_ID_W'b0;
    assign m_axi_araddr = addr;
@@ -81,13 +85,13 @@ module dma_axi_r #(
      if (rst) begin
        state <= `R_ADDR_HS;
        counter_int <= {`AXI_LEN_W{1'b0}};
-       error <= 1'b0;
+       error_int <= 1'b0;
        m_axi_arvalid <= 1'b0;
 	dma_ready <= 1'b1;
      end else begin
        state <= state_nxt;
        counter_int <= counter_int_nxt;
-       error <= error_nxt;
+       error_int <= error_nxt;
        m_axi_arvalid <= m_axi_arvalid_int;
 	dma_ready <= dma_ready_nxt;
      end
@@ -102,7 +106,7 @@ module dma_axi_r #(
    // State machine
    always @ * begin
       state_nxt = state;
-      error_nxt = error;
+      error_nxt = error_int;
       counter_int_nxt = counter_int;
       ready = 1'b0;
       dma_ready_nxt = 1'b0;
