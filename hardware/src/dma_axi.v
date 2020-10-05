@@ -28,7 +28,7 @@ module dma_axi #(
 		    // DMA signals
 		    input [`AXI_LEN_W-1:0]   dma_len,
 		    output 		     dma_ready,
-		    output 		     error,
+		    output 		     error
 		    
 		    );
 
