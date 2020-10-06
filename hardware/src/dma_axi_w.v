@@ -58,6 +58,10 @@ module dma_axi_w # (
 		       input wire 		      m_axi_bvalid,
 		       output reg 		      m_axi_bready
 		       );
+
+   // localparams
+   integer 					      axi_awsize = $clog2(DMA_DATA_W/8);
+   
    
    // counter, state and errorsregs
    reg [`AXI_LEN_W:0]                  counter_int, counter_int_nxt;
@@ -72,6 +76,7 @@ module dma_axi_w # (
    reg                                 m_axi_wlast_int;
    reg				       ready_int, ready_r;
    assign 			       ready = USE_RAM ? ready_int : ready_r;
+
    
    //output error
    assign error = error_int;
@@ -80,7 +85,7 @@ module dma_axi_w # (
    assign m_axi_awid = `AXI_ID_W'b0;
    assign m_axi_awaddr = addr;
    assign m_axi_awlen = dma_len; //number of trasfers per burst
-   assign m_axi_awsize = $clog2(DMA_DATA_W/8); //INCR interval
+   assign m_axi_awsize = axi_awsize[`AXI_SIZE_W-1:0]; //INCR interval
    assign m_axi_awburst = `AXI_BURST_W'b01; //INCR
    assign m_axi_awlock = `AXI_LOCK_W'b0;
    assign m_axi_awcache = `AXI_CACHE_W'h2;
@@ -132,7 +137,7 @@ module dma_axi_w # (
       case (state)
 	//addr handshake
 	`W_ADDR_HS: begin
-       	   counter_int_nxt <= {`AXI_LEN_W{1'b0}};
+       	   counter_int_nxt = {`AXI_LEN_W{1'b0}};
 	   dma_ready_nxt = 1'b1;
 	   if(valid) begin
 	      if (m_axi_awready == 1'b1)
