@@ -50,6 +50,9 @@ module dma_axi_r #(
 		      input wire 		     m_axi_rvalid,
 		      output reg 		     m_axi_rready
 		      );
+
+   //local params
+   integer 					     axi_arsize = $clog2(DMA_DATA_W/8);
    
    // counter, state and error regs
    reg [`AXI_LEN_W-1:0] 			      counter_int, counter_int_nxt;
@@ -70,7 +73,7 @@ module dma_axi_r #(
    assign m_axi_arid = `AXI_ID_W'b0;
    assign m_axi_araddr = addr;
    assign m_axi_arlen = len_r; //number of trasfers per burst
-   assign m_axi_arsize = $clog2(DMA_DATA_W/8); //INCR interval
+   assign m_axi_arsize = axi_arsize[`AXI_SIZE_W-1:0]; //INCR interval
    assign m_axi_arburst = `AXI_BURST_W'b01; //INCR
    assign m_axi_arlock = `AXI_LOCK_W'b0;
    assign m_axi_arcache = `AXI_CACHE_W'h2;
@@ -115,7 +118,7 @@ module dma_axi_r #(
       case (state)
 	    //addr handshake
 	    `R_ADDR_HS: begin
-       	       counter_int_nxt <= {`AXI_LEN_W{1'b0}};
+       	       counter_int_nxt = {`AXI_LEN_W{1'b0}};
 	       dma_ready_nxt = 1'b1;
 	       if (valid) begin
 	          if (m_axi_arready == 1'b1) begin
