@@ -1,7 +1,7 @@
 CORE_NAME:=DMA
 IS_CORE:=1
 USE_NETLIST ?=0
-TOP_MODULE:=axi_dma
+TOP_MODULE:=dma_axi
 
 #PATHS
 DMA_HW_DIR:=$(DMA_DIR)/hardware
