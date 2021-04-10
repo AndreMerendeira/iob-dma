@@ -1,12 +1,15 @@
-DMA_HW_DIR:=$(DMA_DIR)/hardware
+include $(DMA_DIR)/core.mk
 
-#include
-DMA_INC_DIR:=$(DMA_HW_DIR)/include
+# include
 INCLUDE+=$(incdir) $(DMA_INC_DIR)
 
-#headers
-WHDR+=$(wildcard $(DMA_INC_DIR)/*.vh)
+# headers
+VHDR+=$(wildcard $(DMA_INC_DIR)/*.vh)
 
-#sources
-DMA_SRC_DIR:=$(DMA_HW_DIR)/src
+# sources
 VSRC+=$(wildcard $(DMA_SRC_DIR)/*.v)
+
+clean_hw:
+	@rm -rf $(DMA_FPGA_DIR)/vivado/XCKU $(DMA_FPGA_DIR)/quartus/CYCLONEV-GT
+
+.PHONY: clean_hw
