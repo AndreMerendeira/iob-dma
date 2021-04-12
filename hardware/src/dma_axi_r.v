@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-`include "dma_axi.vh"
+`include "axi.vh"
 
 // cLog2 number of states
 `define R_STATES_W 1
