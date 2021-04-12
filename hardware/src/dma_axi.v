@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-`include "dma_axi.vh"
+`include "axi.vh"
 `include "iob_lib.vh"
 
 module dma_axi #(

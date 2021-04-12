@@ -1,7 +1,13 @@
 include $(DMA_DIR)/core.mk
 
+#submodules
+ifneq (INTERCON,$(filter INTERCON, $(SUBMODULES)))
+SUBMODULES+=INTERCON
+include $(INTERCON_DIR)/hardware/hardware.mk
+endif
+
 # include
-INCLUDE+=$(incdir) $(DMA_INC_DIR)
+INCLUDE+=$(incdir)$(DMA_INC_DIR)
 
 # headers
 VHDR+=$(wildcard $(DMA_INC_DIR)/*.vh)
