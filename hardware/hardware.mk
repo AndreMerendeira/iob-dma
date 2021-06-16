@@ -6,12 +6,6 @@ SUBMODULES+=INTERCON
 include $(INTERCON_DIR)/hardware/hardware.mk
 endif
 
-# include
-INCLUDE+=$(incdir)$(DMA_INC_DIR)
-
-# headers
-VHDR+=$(wildcard $(DMA_INC_DIR)/*.vh)
-
 # sources
 VSRC+=$(wildcard $(DMA_SRC_DIR)/*.v)
 
