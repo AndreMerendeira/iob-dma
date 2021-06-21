@@ -17,63 +17,63 @@ module dma_axi_w #(
                    )
    (
     // system inputs
-    input                         clk,
-    input                         rst,
+    input                     clk,
+    input                     rst,
 
     // Databus interface
-    output                        ready,
-    input                         valid,
-    input [ADDR_W-1:0]            addr,
-    input [DMA_DATA_W-1:0]        wdata,
-    input [DMA_DATA_W/8-1:0]      wstrb,
+    output                    ready,
+    input                     valid,
+    input [ADDR_W-1:0]        addr,
+    input [DMA_DATA_W-1:0]    wdata,
+    input [DMA_DATA_W/8-1:0]  wstrb,
 
     // DMA configuration
-    input [`AXI_LEN_W-1:0]        dma_len,
-    output reg                    dma_ready,
-    output                        error,
+    input [`AXI_LEN_W-1:0]    dma_len,
+    output reg                dma_ready,
+    output                    error,
 
     // Master Interface Write Address
-    output [`AXI_ID_W-1:0]        m_axi_awid,
-    output [ADDR_W-1:0]           m_axi_awaddr,
-    output [`AXI_LEN_W-1:0]       m_axi_awlen,
-    output [`AXI_SIZE_W-1:0]      m_axi_awsize,
-    output [`AXI_BURST_W-1:0]     m_axi_awburst,
-    output [`AXI_LOCK_W-1:0]      m_axi_awlock,
-    output [`AXI_CACHE_W-1:0]     m_axi_awcache,
-    output [`AXI_PROT_W-1:0]      m_axi_awprot,
-    output [`AXI_QOS_W-1:0]       m_axi_awqos,
-    output reg                    m_axi_awvalid,
-    input                         m_axi_awready,
+    output [`AXI_ID_W-1:0]    m_axi_awid,
+    output [ADDR_W-1:0]       m_axi_awaddr,
+    output [`AXI_LEN_W-1:0]   m_axi_awlen,
+    output [`AXI_SIZE_W-1:0]  m_axi_awsize,
+    output [`AXI_BURST_W-1:0] m_axi_awburst,
+    output [`AXI_LOCK_W-1:0]  m_axi_awlock,
+    output [`AXI_CACHE_W-1:0] m_axi_awcache,
+    output [`AXI_PROT_W-1:0]  m_axi_awprot,
+    output [`AXI_QOS_W-1:0]   m_axi_awqos,
+    output reg                m_axi_awvalid,
+    input                     m_axi_awready,
 
     // Master Interface Write Data
-    output [DMA_DATA_W-1:0]       m_axi_wdata,
-    output reg [DMA_DATA_W/8-1:0] m_axi_wstrb,
-    output reg                    m_axi_wlast,
-    output reg                    m_axi_wvalid,
-    input                         m_axi_wready,
+    output [DMA_DATA_W-1:0]   m_axi_wdata,
+    output [DMA_DATA_W/8-1:0] m_axi_wstrb,
+    output reg                m_axi_wlast,
+    output reg                m_axi_wvalid,
+    input                     m_axi_wready,
 
     // Master Interface Write Response
-    //input [`AXI_ID_W-1:0]         m_axi_bid,
-    input [`AXI_RESP_W-1:0]       m_axi_bresp,
-    input                         m_axi_bvalid,
-    output reg                    m_axi_bready
+    //input [`AXI_ID_W-1:0]    m_axi_bid,
+    input [`AXI_RESP_W-1:0]   m_axi_bresp,
+    input                     m_axi_bvalid,
+    output reg                m_axi_bready
     );
 
    // localparams
-   localparam                     axi_awsize = $clog2(DMA_DATA_W/8);
+   localparam                 axi_awsize = $clog2(DMA_DATA_W/8);
 
    // counter, state and errorsregs
-   reg [`AXI_LEN_W:0]             counter_int, counter_int_nxt;
-   reg [`W_STATES_W-1:0]          state, state_nxt;
-   reg                            error_int, error_nxt;
+   reg [`AXI_LEN_W:0]         counter_int, counter_int_nxt;
+   reg [`W_STATES_W-1:0]      state, state_nxt;
+   reg                        error_int, error_nxt;
 
    // dma ready to receive run command
-   reg                            dma_ready_nxt;
+   reg                        dma_ready_nxt;
 
    // data write delay regs
-   reg                            m_axi_wvalid_int;
-   reg                            m_axi_wlast_int;
-   reg                            ready_int, ready_r;
+   reg                        m_axi_wvalid_int;
+   reg                        m_axi_wlast_int;
+   reg                        ready_int, ready_r;
    assign ready = USE_RAM? ready_int: ready_r;
 
    // output error
@@ -92,18 +92,17 @@ module dma_axi_w #(
 
    // Data write constants
    assign m_axi_wdata = wdata;
+   assign m_axi_wstrb = wstrb;
 
    // delays
    always @(posedge clk, posedge rst) begin
       if (rst) begin
-         m_axi_wstrb <= {DMA_DATA_W/8{1'b0}};
-      m_axi_wlast <= 0;
-      m_axi_wvalid <= 0;
-   end else begin
-      m_axi_wstrb <= wstrb;
-      m_axi_wlast <= m_axi_wlast_int;
-      m_axi_wvalid <= m_axi_wvalid_int;
-   end
+         m_axi_wlast <= 0;
+         m_axi_wvalid <= 0;
+      end else begin
+         m_axi_wlast <= m_axi_wlast_int;
+         m_axi_wvalid <= m_axi_wvalid_int;
+      end
    end
 
    // Counter, error, state and ready registers
