@@ -1,4 +1,4 @@
-FPU_DIR:=../../../..
+DMA_DIR:=../../../..
 
 include ../../asic.mk
 

@@ -1,5 +1,5 @@
-FPU_DIR:=../../..
-include $(FPU_DIR)/hardware/hardware.mk
+DMA_DIR:=../../..
+include $(DMA_DIR)/hardware/hardware.mk
 
 FPGA_VSRC=$(addprefix ../, $(VSRC) )
 FPGA_VHDR=$(addprefix ../, $(VHDR) )

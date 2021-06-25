@@ -1,4 +1,4 @@
-FPU_DIR:=../../..
+DMA_DIR:=../../..
 
 incdir:=-I
 defmacro:=-D
