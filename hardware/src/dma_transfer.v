@@ -14,7 +14,7 @@ module dma_transfer #(
                  // AXI4 interface parameters
         parameter AXI_ADDR_W = `AXI_ADDR_W,
         parameter AXI_DATA_W = `AXI_DATA_W, // Do not change this value. Required by cpu_axi4_m_if.v, but dma_transfer logic not currently capable of handling different values
-        parameter LEN_W = 32
+        parameter LEN_W = 16
     )(
         // DMA configuration 
         input [AXI_ADDR_W-1:0] addr,
@@ -27,13 +27,11 @@ module dma_transfer #(
 
         // Simple interface for data_in
         input [`DMA_DATA_W-1:0] data_in,
-        input valid_in,
         output ready_in,
 
         // Simple interface for data_out
         output [`DMA_DATA_W-1:0] data_out,
         output valid_out,
-        input ready_out,
 
         // DMA AXI connection
         `include "cpu_axi4_m_if.v"
@@ -42,48 +40,44 @@ module dma_transfer #(
         input rst
     );
 
-    reg [LEN_W-1:0] stored_len;
-
+    // State
     reg [AXI_ADDR_W-1:0] address;
-    wire [`AXI_DATA_W-1:0] wdata;
-    reg [`WSTRB_W-1:0] wstrb;
-    wire [`AXI_DATA_W-1:0] rdata;
-
     reg [`AXI_LEN_W-1:0] dma_len;
-    wire dma_ready;
-    wire n_ready;
-
-    wire align_valid_out;
-
-    reg [LEN_W-1:0] last_transfer_len;
-    reg [7:0] state,state_next;
-
-    reg incrementAddress;
-
-    reg output_last;
-    assign valid_out = align_valid_out | output_last;
-
-    reg [`WSTRB_W:0] initial_strb,final_strb;
-    wire split_valid;
-
-    assign ready_in = (split_ready_in & (state == 8'h2 || state == 8'h4)); 
-
-    wire split_ready_in;
-
-    reg w_valid,r_valid;
-
-    wire valid = w_valid | r_valid;
-
-    wire [1:0] offset = address[1:0];
-
+    reg [LEN_W-1:0] stored_len;
+    reg [7:0] state;
     reg first_transfer;
+    reg [`WSTRB_W-1:0] wstrb;
+
+    // Control
+    reg [7:0] state_next;
+    reg w_valid,r_valid;
+    reg output_last;
+    reg [`WSTRB_W-1:0] wstrb_int;
+    reg firstValid;
+    reg incrementAddress;
     reg set_first_transfer,reset_first_transfer;
 
+    // Auxiliary
+    reg [LEN_W-1:0] last_transfer_len;
+    reg [`WSTRB_W-1:0] initial_strb,final_strb;
+
+   // Auxiliary values
     wire [LEN_W-1:0] first_transfer_len = (32'd1020 + (32'd4 - address[1:0]));
-
-    assign ready = (state == 8'h0);
-
     wire last_transfer = !((first_transfer && stored_len > first_transfer_len) || (!first_transfer && stored_len > 1024));
+
+    // Connect to modules
+    wire dma_ready;
+    wire n_ready;
+    wire align_valid_out;
+    wire split_ready_in;
+    wire valid = w_valid | r_valid;
+    wire [`AXI_DATA_W-1:0] wdata;
+    wire [`AXI_DATA_W-1:0] rdata;
+
+    // Output
+    assign ready = (state == 8'h0);
+    assign ready_in = (!readNotWrite & split_ready_in & (state == 8'h2 || state == 8'h4));
+    assign valid_out = align_valid_out | output_last;
 
 eth_burst_align #(.LEN_W(32)) align( // Read
     .offset(addr[1:0]),
@@ -93,11 +87,9 @@ eth_burst_align #(.LEN_W(32)) align( // Read
 
     .data_in(rdata),
     .valid_in(n_ready & readNotWrite),
-    .ready_in(), // Not used since the DMA module assumes always ready
 
     .data_out(data_out),
     .valid_out(align_valid_out),
-    .ready_out(ready_out),
 
     .clk(clk),
     .rst(rst)
@@ -105,14 +97,13 @@ eth_burst_align #(.LEN_W(32)) align( // Read
 
 eth_burst_split #(.LEN_W(32)) split( // Write
     .offset(addr[1:0]),
+    .firstValid(firstValid),
 
     .data_in(data_in),
-    .valid_in(valid_in),
     .ready_in(split_ready_in),
 
     .data_out(wdata),
-    .valid_out(split_valid),
-    .ready_out(n_ready & !dma_ready),
+    .ready_out(m_axi_wvalid & m_axi_wready & !dma_ready),
 
     .clk(clk),
     .rst(rst)
@@ -124,7 +115,7 @@ dma_axi #(
     dma
     (
     .valid(valid),
-    .address(address),
+    .address({address[AXI_ADDR_W-1:2],2'b00}),
     .wdata(wdata),
     .wstrb(wstrb),
     .rdata(rdata),
@@ -189,10 +180,10 @@ always @*
 begin
     last_transfer_len = 0;
 
-    if(offset[1:0] == 2'b00 & stored_len[1:0] == 2'b00)
+    if(address[1:0] == 2'b00 & stored_len[1:0] == 2'b00)
         last_transfer_len = stored_len[9:2] - 8'h1;
-    else if((offset[1:0] == 2'b10 && stored_len[1:0] == 2'b11) ||
-            (offset[1:0] == 2'b11 && stored_len[1:0] >= 2'b10))
+    else if((address[1:0] == 2'b10 && stored_len[1:0] == 2'b11) ||
+            (address[1:0] == 2'b11 && stored_len[1:0] >= 2'b10))
         last_transfer_len = stored_len[9:2] + 8'h1;
     else
         last_transfer_len = stored_len[9:2];
@@ -232,6 +223,9 @@ begin
     endcase
 end
 
+reg [10:0] counter;
+
+// State 
 always @(posedge clk,posedge rst)
 begin
     if(rst) begin
@@ -240,8 +234,11 @@ begin
         stored_len <= 0;
         state <= 0;
         first_transfer <= 0;
+        wstrb <= 0;
+        counter <= 0;
     end else begin
         state <= state_next;
+        wstrb <= wstrb_int;
 
         if(set_first_transfer)
             first_transfer <= 1'b1;
@@ -255,6 +252,12 @@ begin
             address <= addr;
             stored_len <= length;
         end
+
+        if(state == 8'h2)
+            counter <= dma_len;
+
+        if(m_axi_wready & m_axi_wvalid)
+            counter <= counter - 1;
 
         if(incrementAddress) begin
             if(first_transfer) begin
@@ -280,13 +283,15 @@ begin
     end
 end
 
+// Control
 always @*
 begin
     state_next = state;
+    wstrb_int = wstrb;
     r_valid = 0;
     output_last = 0;
     w_valid = 0;
-    wstrb = 0;
+    firstValid = 0;
     incrementAddress = 0;
     set_first_transfer = 0;
     reset_first_transfer = 0;
@@ -298,48 +303,52 @@ begin
                 set_first_transfer = 1;
             end
         end
-        8'h1: begin // Calculate auxiliary values, wait for dma, start a transfer
-            if(dma_ready)
+        8'h1: begin // Calculate auxiliary values and wait for dma
+            if(dma_ready) begin
                 state_next = 8'h2;
+                if(readNotWrite)
+                    wstrb_int = 0;
+                else
+                    wstrb_int = 4'hf; // Need to set wstrb to signal the DMA a write operation
+            end
         end
         8'h2: begin // Program DMA
             if(readNotWrite) begin
                 r_valid = 1'b1;
-                if(m_axi_rready & m_axi_rvalid)
+                if(m_axi_arready)
                     state_next = 8'h4;
             end else begin
-                if(dma_len == 0)
-                    wstrb = final_strb;
-                else if(first_transfer)
-                    wstrb = initial_strb;
-                else 
-                    wstrb = 4'hf;
+                w_valid = 1'b1;
 
-                w_valid = split_valid;
-                
-                if(m_axi_wready & m_axi_wvalid) begin
+                if(m_axi_awready) begin
+                    if(first_transfer)
+                        firstValid = 1'b1;
+
+                    // The first wstrb is set here
                     if(dma_len == 0)
-                        state_next = 8'h0;
-                    else
-                        state_next = 8'h4;
+                        wstrb_int = final_strb;
+                    else if(first_transfer)
+                        wstrb_int = initial_strb;
+                    else 
+                        wstrb_int = 4'hf;
+
+                    state_next = 8'h4;
                 end
             end
         end
         8'h4: begin // Wait for end of transfer
             if(readNotWrite) begin // Read
-                r_valid = 1'b1;
-
-                if(m_axi_rlast)
+                if(m_axi_rvalid & m_axi_rready & m_axi_rlast)
                     state_next = 8'h8;
             end else begin // Write
-                w_valid = split_valid;
-                wstrb = 4'hf;
+                if(m_axi_wready & m_axi_wvalid)
+                    if(counter == 1 & last_transfer)
+                        wstrb_int = final_strb;
+                    else
+                        wstrb_int = 4'hf;
 
                 if(m_axi_wlast)
                     state_next = 8'h8;
-
-                if(m_axi_wlast & last_transfer)
-                    wstrb = final_strb;
             end
         end
         8'h8: begin
@@ -370,8 +379,6 @@ endmodule
 
 // Given the initial byte offset, this module aligns incoming data
 // Start must be asserted once before the first valid data in a new burst transfer
-// Last is asserted at the end to output the last remaining bytes
-// Data_out is not registered - careful with time requirements
 module eth_burst_align #(
         parameter ADDR_W = `AXI_ADDR_W,
         parameter DATA_W = 32,
@@ -382,21 +389,17 @@ module eth_burst_align #(
 
         input last,
 
-        // Simple interface for data_in (transfer occurs when valid_in == ready_in == 1)
+        // Simple interface for data_in
         input [31:0] data_in,
         input valid_in,
-        output ready_in,
 
-        // Simple interface for data_out (transfer occurs when valid_out == ready_out == 1)
+        // Simple interface for data_out
         output reg [31:0] data_out,
         output reg valid_out,
-        input ready_out,
 
         input clk,
         input rst
     );
-
-assign ready_in = ready_out;
 
 reg valid;
 reg [31:0] stored_data;
@@ -406,7 +409,7 @@ begin
     data_out = 0;
     valid_out = 1'b0;
 
-    case(offset[1:0])
+    case(offset)
     2'b00: data_out = stored_data; 
     2'b01: data_out = {data_in[7:0],stored_data[23:0]};
     2'b10: data_out = {data_in[15:0],stored_data[15:0]};
@@ -433,7 +436,7 @@ begin
             valid <= 1'b1;
 
         if(valid_in | last) begin
-            case(offset[1:0])
+            case(offset)
             2'b00: stored_data <= data_in;
             2'b01: stored_data[23:0] <= data_in[31:8];
             2'b10: stored_data[15:0] <= data_in[31:16];
@@ -445,8 +448,7 @@ end
 
 endmodule // eth_burst_align
 
-// Given aligned data, splits the data in order to meet byte alignment in a burst transfer starting with offset byte, 
-// 
+// Given aligned data, splits the data in order to meet byte alignment in a burst transfer starting with offset byte
 module eth_burst_split #(
         parameter ADDR_W = `AXI_ADDR_W,
         parameter DATA_W = 32,
@@ -454,40 +456,38 @@ module eth_burst_split #(
     ) 
     (
         input [1:0] offset,
+        input firstValid,
 
         // Simple interface for data_in
         input [DATA_W-1:0] data_in,
-        input valid_in,
         output ready_in,
 
         // Simple interface for data_out
         output reg [DATA_W-1:0] data_out,
-        output wire valid_out,
         input ready_out,
 
         input clk,
         input rst
     );
 
-assign ready_in = ready_out;
-assign valid_out = valid_in;
+assign ready_in = firstValid | ready_out;
 
 reg [23:0] stored_data;
 
 always @(posedge clk,posedge rst)
 begin
     if(rst) begin
-        stored_data <= 32'h0;
+        stored_data <= 0;
         data_out <= 0;
     end else begin
-        if(valid_out & ready_out) begin
-            case(offset[1:0])
+        if(firstValid | ready_out) begin
+            case(offset)
             2'b00:;
             2'b01: stored_data[7:0] <= data_in[31:24];
             2'b10: stored_data[15:0] <= data_in[31:16];
             2'b11: stored_data <= data_in[31:8];
             endcase
-            case(offset[1:0])
+            case(offset)
             2'b00: data_out <= data_in;
             2'b01: data_out <= {data_in[23:0],stored_data[7:0]};
             2'b10: data_out <= {data_in[15:0],stored_data[15:0]};
