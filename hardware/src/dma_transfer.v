@@ -9,27 +9,29 @@
 `define DMA_DATA_W 32
 `define WSTRB_W     4
 
-// DMA that implements byte alignment and multiple AXI burst transfers
+// DMA that implements byte alignment and multiple AXI burst transfers to support any transfer length
 module dma_transfer #(
                  // AXI4 interface parameters
         parameter AXI_ADDR_W = `AXI_ADDR_W,
         parameter AXI_DATA_W = `AXI_DATA_W, // Do not change this value. Required by cpu_axi4_m_if.v, but dma_transfer logic not currently capable of handling different values
         parameter LEN_W = 16
     )(
-        // DMA configuration 
+        // DMA configuration (must remain constant after asserting start)
         input [AXI_ADDR_W-1:0] addr,
         input [LEN_W-1:0] length,
         input readNotWrite, // 0 - write, 1 - read
+        
+        // Start transfer
         input start,
 
         // DMA status
         output wire ready,
 
-        // Simple interface for data_in
+        // Simple interface for data_in (valid_in assumed = 1, cannot pause transfer in progress)
         input [`DMA_DATA_W-1:0] data_in,
         output ready_in,
 
-        // Simple interface for data_out
+        // Simple interface for data_out (ready_out assumed = 1, must be ready to accept new data every cycle)
         output [`DMA_DATA_W-1:0] data_out,
         output valid_out,
 
@@ -44,12 +46,12 @@ module dma_transfer #(
     reg [AXI_ADDR_W-1:0] address;
     reg [`AXI_LEN_W-1:0] dma_len;
     reg [LEN_W-1:0] stored_len;
-    reg [7:0] state;
+    reg [3:0] state;
     reg first_transfer;
     reg [`WSTRB_W-1:0] wstrb;
 
     // Control
-    reg [7:0] state_next;
+    reg [3:0] state_next;
     reg w_valid,r_valid;
     reg output_last;
     reg [`WSTRB_W-1:0] wstrb_int;
@@ -246,16 +248,6 @@ begin
         if(reset_first_transfer)
             first_transfer <= 1'b0;
 
-        // Start by sampling addr and length
-        if(start && state == 8'h0)
-        begin
-            address <= addr;
-            stored_len <= length;
-        end
-
-        if(state == 8'h2)
-            counter <= dma_len;
-
         if(m_axi_wready & m_axi_wvalid)
             counter <= counter - 1;
 
@@ -272,14 +264,25 @@ begin
             end
         end
 
-        if(state == 8'h1)
-        begin
+        case(state)
+        4'h0: begin
+            if(start) begin
+                address <= addr;
+                stored_len <= length;
+            end
+        end
+        4'h1: begin
             if(stored_len > first_transfer_len) begin
                 dma_len <= 8'hff;
             end else begin
                 dma_len <= last_transfer_len;
             end
         end
+        4'h2: begin
+            counter <= dma_len;
+        end
+        default:;
+        endcase
     end
 end
 
@@ -297,26 +300,26 @@ begin
     reset_first_transfer = 0;
 
     case(state)
-        8'h0: begin // Wait for start
+        4'h0: begin // Wait for start
             if(start) begin
-                state_next = 8'h1;
+                state_next = 4'h1;
                 set_first_transfer = 1;
             end
         end
-        8'h1: begin // Calculate auxiliary values and wait for dma
+        4'h1: begin // Calculate auxiliary values and wait for dma
             if(dma_ready) begin
-                state_next = 8'h2;
+                state_next = 4'h2;
                 if(readNotWrite)
                     wstrb_int = 0;
                 else
                     wstrb_int = 4'hf; // Need to set wstrb to signal the DMA a write operation
             end
         end
-        8'h2: begin // Program DMA
+        4'h2: begin // Program DMA
             if(readNotWrite) begin
                 r_valid = 1'b1;
                 if(m_axi_arready)
-                    state_next = 8'h4;
+                    state_next = 4'h4;
             end else begin
                 w_valid = 1'b1;
 
@@ -324,7 +327,7 @@ begin
                     if(first_transfer)
                         firstValid = 1'b1;
 
-                    // The first wstrb is set here
+                    // The correct first wstrb is set here
                     if(dma_len == 0)
                         wstrb_int = final_strb;
                     else if(first_transfer)
@@ -332,42 +335,44 @@ begin
                     else 
                         wstrb_int = 4'hf;
 
-                    state_next = 8'h4;
+                    state_next = 4'h4;
                 end
             end
         end
-        8'h4: begin // Wait for end of transfer
+        4'h4: begin // Wait for end of transfer
             if(readNotWrite) begin // Read
                 if(m_axi_rvalid & m_axi_rready & m_axi_rlast)
-                    state_next = 8'h8;
+                    state_next = 4'h8;
             end else begin // Write
-                if(m_axi_wready & m_axi_wvalid)
+                if(m_axi_wready & m_axi_wvalid) begin
                     if(counter == 1 & last_transfer)
                         wstrb_int = final_strb;
                     else
                         wstrb_int = 4'hf;
+                end
 
                 if(m_axi_wlast)
-                    state_next = 8'h8;
+                    state_next = 4'h8;
             end
         end
-        8'h8: begin
+        4'h8: begin
             if(readNotWrite) begin // Read
                 if(last_transfer) begin
                     output_last = 1'b1; // Output the last bytes
-                    state_next = 8'h0;
+                    state_next = 4'h0;
                 end
                 else
-                    state_next = 8'h1;                        
+                    state_next = 4'h1;                        
             end else begin // Write
-                if(!valid_out)
+                if(!valid_out) begin
                     if(last_transfer) 
-                        state_next = 8'h0;
+                        state_next = 4'h0;
                     else
-                        state_next = 8'h1;
+                        state_next = 4'h1;
+                end
             end
 
-            if(state_next == 8'h1) begin
+            if(state_next == 4'h1) begin
                 incrementAddress = 1'b1;
                 reset_first_transfer = 1'b1;
             end
