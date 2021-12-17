@@ -10,7 +10,7 @@ include core.mk
 #
 
 corename:
-	@echo "UART"
+	@echo "DMA"
 
 sim:
 ifeq ($(SIM_SERVER), localhost)
