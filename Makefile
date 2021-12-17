@@ -9,6 +9,9 @@ include core.mk
 # SIMULATE
 #
 
+corename:
+	@echo "DMA"
+
 sim:
 ifeq ($(SIM_SERVER), localhost)
 	make -C $(SIM_DIR) run SIMULATOR=$(SIMULATOR)
@@ -98,7 +101,8 @@ endif
 # CLEAN ALL
 clean-all: sim-clean fpga-clean asic-clean
 
-.PHONY: sim sim-waves sim-clean \
+.PHONY: corename
+	sim sim-waves sim-clean \
 	fpga fpga-clean \
 	asic asic-synth asic-sim-synth asic-clean \
 	clean-all
