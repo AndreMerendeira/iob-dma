@@ -1,8 +1,8 @@
 include $(DMA_DIR)/core.mk
 
 #submodules
-ifneq (INTERCON,$(filter INTERCON, $(SUBMODULES)))
-SUBMODULES+=INTERCON
+ifneq (INTERCON,$(filter INTERCON, $(MODULES)))
+MODULES+=INTERCON
 include $(INTERCON_DIR)/hardware/hardware.mk
 endif
 
