@@ -5,18 +5,12 @@
 DMA_DIR:=.
 include config.mk
 
-.PHONY: corename
-	sim sim-waves sim-clean \
-	fpga-build fpga-clean \
-	asic asic-synth asic-sim-synth asic-clean \
-	clean-all
-
 corename:
 	@echo "DMA"
 
-	#
-	# SIMULATE
-	#
+#
+# SIMULATE
+#
 sim:
 	make -C $(SIM_DIR) run
 
@@ -82,3 +76,9 @@ endif
 
 # CLEAN ALL
 clean-all: sim-clean fpga-clean asic-clean
+
+.PHONY: corename
+	sim sim-waves sim-clean \
+	fpga-build fpga-clean \
+	asic asic-synth asic-sim-synth asic-clean \
+	clean-all
