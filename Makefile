@@ -3,56 +3,38 @@
 #
 
 DMA_DIR:=.
-include core.mk
+include config.mk
 
-#
-# SIMULATE
-#
+.PHONY: corename
+	sim sim-waves sim-clean \
+	fpga-build fpga-clean \
+	asic asic-synth asic-sim-synth asic-clean \
+	clean-all
 
 corename:
 	@echo "DMA"
 
+	#
+	# SIMULATE
+	#
 sim:
-ifeq ($(SIM_SERVER), localhost)
-	make -C $(SIM_DIR) run SIMULATOR=$(SIMULATOR)
-else
-	ssh $(SIM_USER)@$(SIM_SERVER) "if [ ! -d $(REMOTE_ROOT_DIR) ]; then mkdir -p $(REMOTE_ROOT_DIR); fi"
-	make -C $(SIM_DIR) clean
-	rsync -avz --delete --exclude .git $(DMA_DIR) $(SIM_USER)@$(SIM_SERVER):$(USER)/$(REMOTE_ROOT_DIR)
-	ssh $(SIM_USER)@$(SIM_SERVER) 'cd $(REMOTE_ROOT_DIR); make -C $(SIM_DIR) run SIMULATOR=$(SIMULATOR) SIM_SERVER=localhost'
-endif
+	make -C $(SIM_DIR) run
 
 sim-waves:
 	gtkwave $(SIM_DIR)/*.vcd &
 
 sim-clean:
-	make -C $(SIM_DIR) clean
-ifneq ($(SIM_SERVER), localhost)
-	rsync -avz --delete --exclude .git $(DMA_DIR) $(SIM_USER)@$(SIM_SERVER):$(USER)/$(REMOTE_ROOT_DIR)
-	ssh $(SIM_USER)@$(SIM_SERVER) "if [ -d $(REMOTE_ROOT_DIR) ]; then cd $(REMOTE_ROOT_DIR); make -C $(SIM_DIR) clean; fi"
-endif
+	make -C $(SIM_DIR) clean-all
 
 #
 # FPGA COMPILE
 #
 
-fpga:
-ifeq ($(FPGA_SERVER), localhost)
-	make -C $(FPGA_DIR) run DATA_W=$(DATA_W)
-else 
-	ssh $(FPGA_USER)@$(FPGA_SERVER) "if [ ! -d $(REMOTE_ROOT_DIR) ]; then mkdir -p $(REMOTE_ROOT_DIR); fi"
-	rsync -avz --delete --exclude .git $(DMA_DIR) $(FPGA_USER)@$(FPGA_SERVER):$(REMOTE_ROOT_DIR)
-	ssh $(FPGA_USER)@$(FPGA_SERVER) 'cd $(REMOTE_ROOT_DIR); make -C $(FPGA_DIR) run FPGA_FAMILY=$(FPGA_FAMILY) FPGA_SERVER=localhost'
-	mkdir -p $(FPGA_DIR)/$(FPGA_FAMILY)
-	scp $(FPGA_USER)@$(FPGA_SERVER):$(REMOTE_ROOT_DIR)/$(FPGA_DIR)/$(FPGA_FAMILY)/$(FPGA_LOG) $(FPGA_DIR)/$(FPGA_FAMILY)
-endif
+fpga-build:
+	make -C $(FPGA_DIR) build
 
 fpga-clean:
-	make -C $(FPGA_DIR) clean
-ifneq ($(FPGA_SERVER), localhost)
-	rsync -avz --delete --exclude .git $(DMA_DIR) $(FPGA_USER)@$(FPGA_SERVER):$(REMOTE_ROOT_DIR)
-	ssh $(FPGA_USER)@$(FPGA_SERVER) "if [ -d $(REMOTE_ROOT_DIR) ]; then cd $(REMOTE_ROOT_DIR); make -C $(FPGA_DIR) clean; fi"
-endif
+	make -C $(FPGA_DIR) clean-all
 
 #
 # COMPILE ASIC
@@ -100,9 +82,3 @@ endif
 
 # CLEAN ALL
 clean-all: sim-clean fpga-clean asic-clean
-
-.PHONY: corename
-	sim sim-waves sim-clean \
-	fpga fpga-clean \
-	asic asic-synth asic-sim-synth asic-clean \
-	clean-all
