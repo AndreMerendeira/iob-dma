@@ -8,8 +8,5 @@ $(foreach p, $(SUBMODULES), $(if $(filter $p, $(MODULES)),,$(eval include $($p_D
 
 #DMA HARDWARE
 
-#hardware include dirs
-INCLUDE+=$(incdir)$(DMA_INC_DIR)
-
 # sources
 VSRC+=$(wildcard $(DMA_SRC_DIR)/*.v)
