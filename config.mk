@@ -6,8 +6,6 @@ DMA_HW_DIR:=$(DMA_DIR)/hardware
 DMA_INC_DIR:=$(DMA_HW_DIR)/include
 DMA_SRC_DIR:=$(DMA_HW_DIR)/src
 DMA_SIM_DIR:=$(DMA_HW_DIR)/simulation
-DMA_TB_DIR:=$(DMA_HW_DIR)/testbench
-FPGA_DIR ?=$(shell find $(DMA_DIR)/hardware -name $(FPGA_FAMILY))
 SUBMODULES_DIR:=$(DMA_DIR)/submodules
 
 #SUBMODULE PATHS
@@ -19,10 +17,6 @@ $(foreach d, $(SUBMODULE_DIRS), $(eval TMP=$(shell make -C $(SUBMODULES_DIR)/$d 
 #SIMULATION
 SIMULATOR ?=icarus
 SIMULATOR_LIST ?=icarus
-
-#FPGA
-FPGA_FAMILY ?=XCKU
-FPGA_FAMILY_LIST ?=XCKU
 
 # VERSION
 VERSION ?=0.1
