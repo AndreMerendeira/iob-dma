@@ -1,5 +1,3 @@
-TOP_MODULE:=dma_axi
-
 #PATHS
 REMOTE_ROOT_DIR ?=sandbox/iob-soc/submodules/DMA
 DMA_HW_DIR:=$(DMA_DIR)/hardware
