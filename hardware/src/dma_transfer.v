@@ -59,7 +59,6 @@ module dma_transfer #(
 
    // Auxiliary values
     wire [LEN_W-1:0] first_transfer_len = (32'd1020 + (32'd4 - address[1:0]));
-    wire last_transfer = !((first_transfer && stored_len > first_transfer_len) || (!first_transfer && stored_len > 1024));
 
     // Connect to modules
     wire dma_ready;
@@ -171,10 +170,24 @@ dma_axi #(
     .rst(rst)
     );
 
-// Calculates auxiliary values
+// Calculate inter transfer values
+// All calculates done in bytes
+
+reg [15:0] transfer_byte_size;
+reg [15:0] boundary_transfer_len;
+reg last_transfer;
+reg [7:0] dma_transfer_size;
+
+function [15:0] min(input [15:0] a,b);
+    begin
+        min = (a < b) ? a : b;
+    end
+endfunction
+
 always @*
 begin
     last_transfer_len = 0;
+    boundary_transfer_len = 0;
 
     if(address[1:0] == 2'b00 & stored_len[1:0] == 2'b00)
         last_transfer_len = stored_len[9:2] - 8'h1;
@@ -183,6 +196,20 @@ begin
         last_transfer_len = stored_len[9:2] + 8'h1;
     else
         last_transfer_len = stored_len[9:2];
+
+    boundary_transfer_len = 16'h1000 - address[11:0]; // Maximum bytes that can be transfer before crossing a border
+
+    if(first_transfer)
+        transfer_byte_size = min(boundary_transfer_len,min(stored_len,first_transfer_len));
+    else
+        transfer_byte_size = min(boundary_transfer_len,stored_len);
+
+    last_transfer = (transfer_byte_size == stored_len);
+
+    if(last_transfer)
+        dma_transfer_size = last_transfer_len;
+    else
+        dma_transfer_size = (transfer_byte_size - 1) >> 2;
 
     case(address[1:0])
         2'b00: initial_strb = 4'b1111;
@@ -246,16 +273,8 @@ begin
             counter <= counter - 1;
 
         if(incrementAddress) begin
-            if(first_transfer) begin
-                address <= address + first_transfer_len;
-                stored_len <= stored_len - first_transfer_len;    
-            end else begin
-                address <= address + 1024;
-                if(stored_len >= 1024)
-                    stored_len <= stored_len - 1024;
-                else
-                    stored_len <= 0;
-            end
+            address <= address + transfer_byte_size;
+            stored_len <= stored_len - transfer_byte_size;    
         end
 
         case(state)
@@ -266,11 +285,7 @@ begin
             end
         end
         4'h1: begin
-            if(stored_len > first_transfer_len) begin
-                dma_len <= 8'hff;
-            end else begin
-                dma_len <= last_transfer_len;
-            end
+            dma_len <= dma_transfer_size;
         end
         4'h2: begin
             counter <= dma_len;
@@ -322,10 +337,10 @@ begin
                         firstValid = 1'b1;
 
                     // The correct first wstrb is set here
-                    if(dma_len == 0)
-                        wstrb_int = final_strb;
-                    else if(first_transfer)
+                    if(first_transfer)
                         wstrb_int = initial_strb;
+                    else if(dma_len == 0)
+                        wstrb_int = final_strb;
                     else 
                         wstrb_int = 4'hf;
 
