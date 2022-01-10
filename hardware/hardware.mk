@@ -9,4 +9,6 @@ $(foreach p, $(SUBMODULES), $(if $(filter $p, $(MODULES)),,$(eval include $($p_D
 #DMA HARDWARE
 
 # sources
-VSRC+=$(wildcard $(DMA_SRC_DIR)/*.v)
+VSRC+=$(DMA_SRC_DIR)/dma_axi.v
+VSRC+=$(DMA_SRC_DIR)/dma_axi_r.v
+VSRC+=$(DMA_SRC_DIR)/dma_axi_w.v

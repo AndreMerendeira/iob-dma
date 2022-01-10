@@ -3,18 +3,12 @@
 `include "iob_lib.vh"
 `include "axi.vh"
 
-// Hardcoded for 32 bit transfers (in order to match SDRAM width)
-// Different bit transfers require a change in strobe logic which is not currently implemented
-`define AXI_DATA_W 32
-`define DMA_DATA_W 32
-`define WSTRB_W     4
-
 // DMA that implements byte alignment and multiple AXI burst transfers to support any transfer length
 module dma_transfer #(
                  // AXI4 interface parameters
-        parameter AXI_ADDR_W = `AXI_ADDR_W,
-        parameter AXI_DATA_W = `AXI_DATA_W, // Do not change this value. Required by cpu_axi4_m_if.v, but dma_transfer logic not currently capable of handling different values
-        parameter LEN_W = 16
+        parameter AXI_DATA_W = 32, // dma_transfer currently only supports 32 bit transfers
+        parameter AXI_ADDR_W = 0,
+        parameter LEN_W = 0
     )(
         // DMA configuration (must remain constant after asserting start)
         input [AXI_ADDR_W-1:0] addr,
@@ -28,11 +22,11 @@ module dma_transfer #(
         output wire ready,
 
         // Simple interface for data_in (valid_in assumed = 1, cannot pause transfer in progress)
-        input [`DMA_DATA_W-1:0] data_in,
+        input [31:0] data_in,
         output ready_in,
 
         // Simple interface for data_out (ready_out assumed = 1, must be ready to accept new data every cycle)
-        output [`DMA_DATA_W-1:0] data_out,
+        output [31:0] data_out,
         output valid_out,
 
         // DMA AXI connection
@@ -48,20 +42,20 @@ module dma_transfer #(
     reg [LEN_W-1:0] stored_len;
     reg [3:0] state;
     reg first_transfer;
-    reg [`WSTRB_W-1:0] wstrb;
+    reg [AXI_DATA_W/8-1:0] wstrb;
 
     // Control
     reg [3:0] state_next;
     reg w_valid,r_valid;
     reg output_last;
-    reg [`WSTRB_W-1:0] wstrb_int;
+    reg [AXI_DATA_W/8-1:0] wstrb_int;
     reg firstValid;
     reg incrementAddress;
     reg set_first_transfer,reset_first_transfer;
 
     // Auxiliary
     reg [LEN_W-1:0] last_transfer_len;
-    reg [`WSTRB_W-1:0] initial_strb,final_strb;
+    reg [AXI_DATA_W/8-1:0] initial_strb,final_strb;
 
    // Auxiliary values
     wire [LEN_W-1:0] first_transfer_len = (32'd1020 + (32'd4 - address[1:0]));
@@ -73,15 +67,15 @@ module dma_transfer #(
     wire align_valid_out;
     wire split_ready_in;
     wire valid = w_valid | r_valid;
-    wire [`AXI_DATA_W-1:0] wdata;
-    wire [`AXI_DATA_W-1:0] rdata;
+    wire [AXI_DATA_W-1:0] wdata;
+    wire [AXI_DATA_W-1:0] rdata;
 
     // Output
     assign ready = (state == 8'h0);
     assign ready_in = (!readNotWrite & split_ready_in & (state == 8'h2 || state == 8'h4));
     assign valid_out = align_valid_out | output_last;
 
-eth_burst_align #(.LEN_W(32)) align( // Read
+burst_align align( // Read
     .offset(addr[1:0]),
     .start(state == 8'h0),
 
@@ -97,7 +91,7 @@ eth_burst_align #(.LEN_W(32)) align( // Read
     .rst(rst)
     );
 
-eth_burst_split #(.LEN_W(32)) split( // Write
+burst_split split( // Write
     .offset(addr[1:0]),
     .firstValid(firstValid),
 
@@ -384,11 +378,7 @@ endmodule
 
 // Given the initial byte offset, this module aligns incoming data
 // Start must be asserted once before the first valid data in a new burst transfer
-module eth_burst_align #(
-        parameter ADDR_W = `AXI_ADDR_W,
-        parameter DATA_W = 32,
-        parameter LEN_W = 16
-        )(
+module burst_align (
         input [1:0] offset,
         input start,
 
@@ -451,24 +441,19 @@ begin
     end
 end
 
-endmodule // eth_burst_align
+endmodule // burst_align
 
 // Given aligned data, splits the data in order to meet byte alignment in a burst transfer starting with offset byte
-module eth_burst_split #(
-        parameter ADDR_W = `AXI_ADDR_W,
-        parameter DATA_W = 32,
-        parameter LEN_W = 16
-    ) 
-    (
+module burst_split (
         input [1:0] offset,
         input firstValid,
 
         // Simple interface for data_in
-        input [DATA_W-1:0] data_in,
+        input [31:0] data_in,
         output ready_in,
 
         // Simple interface for data_out
-        output reg [DATA_W-1:0] data_out,
+        output reg [31:0] data_out,
         input ready_out,
 
         input clk,
@@ -502,4 +487,4 @@ begin
     end
 end
 
-endmodule // eth_burst_split
+endmodule // burst_split
