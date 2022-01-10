@@ -4,6 +4,7 @@ DMA_HW_DIR:=$(DMA_DIR)/hardware
 DMA_INC_DIR:=$(DMA_HW_DIR)/include
 DMA_SRC_DIR:=$(DMA_HW_DIR)/src
 DMA_SIM_DIR:=$(DMA_HW_DIR)/simulation
+SIM_DIR?=$(DMA_SIM_DIR)
 SUBMODULES_DIR:=$(DMA_DIR)/submodules
 
 #SUBMODULE PATHS
