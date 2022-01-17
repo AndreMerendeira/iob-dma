@@ -15,6 +15,7 @@ $(foreach d, $(SUBMODULE_DIRS), $(eval TMP=$(shell make -C $(SUBMODULES_DIR)/$d 
 
 #SIMULATION
 SIMULATOR ?=icarus
+SIM_DIR ?=$(DMA_SIM_DIR)/$(SIMULATOR)
 SIMULATOR_LIST ?=icarus
 
 # VERSION

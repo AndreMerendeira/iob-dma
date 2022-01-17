@@ -18,7 +18,7 @@ sim-waves:
 	gtkwave $(SIM_DIR)/*.vcd &
 
 sim-clean:
-	make -C $(SIM_DIR) clean-all
+	make -C $(SIM_DIR) clean
 
 # CLEAN ALL
 clean-all: sim-clean
