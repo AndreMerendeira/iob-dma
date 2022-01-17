@@ -2,34 +2,34 @@
 
 `include "axi.vh"
 
-// cLog2 number of states
-`define R_STATES_W 1
-
-// FSM States
-`define R_ADDR_HS `R_STATES_W'h0 // Read address handshake
-`define R_DATA    `R_STATES_W'h1 // Read data
-
 module dma_axi_r #(
                    parameter ADDR_W = `AXI_ADDR_W,
                    parameter DMA_DATA_W = 32
                    )
    (
-    // system inputs
     input                     clk,
     input                     rst,
 
-    // Databus interface
+    //
+    // DMA configuration
+    //
+    input [`AXI_LEN_W-1:0]    dma_len,
+    output reg                dma_ready,
+    output                    error,
+
+    //
+    // Native Slave I/F
+    //
     output reg                ready,
     input                     valid,
     input [ADDR_W-1:0]        addr,
     output [DMA_DATA_W-1:0]   rdata,
 
-    // DMA configuration
-    input [`AXI_LEN_W-1:0]    dma_len,
-    output reg                dma_ready,
-    output                    error,
+    //
+    // AXI-4 Full Master Read I/F
+    //
 
-    // Master Interface Read Address
+    // Read Address
     output [`AXI_ID_W-1:0]    m_axi_arid,
     output [ADDR_W-1:0]       m_axi_araddr,
     output [`AXI_LEN_W-1:0]   m_axi_arlen,
@@ -42,8 +42,8 @@ module dma_axi_r #(
     output reg                m_axi_arvalid,
     input                     m_axi_arready,
 
-    // Master Interface Read Data
-    //input [`AXI_ID_W-1:0]     m_axi_rid,
+    // Read Data
+    input [`AXI_ID_W-1:0]     m_axi_rid,
     input [DMA_DATA_W-1:0]    m_axi_rdata,
     input [`AXI_RESP_W-1:0]   m_axi_rresp,
     input                     m_axi_rlast,
@@ -51,106 +51,134 @@ module dma_axi_r #(
     output reg                m_axi_rready
     );
 
-   // local params
    localparam                 axi_arsize = $clog2(DMA_DATA_W/8);
 
-   // counter, state and error regs
+   localparam ADDR_HS=1'h0, READ=1'h1;
+
+   // State signals
+   reg                        state, state_nxt;
+
+   // Counter and error signals
    reg [`AXI_LEN_W-1:0]       counter_int, counter_int_nxt;
-   reg [`R_STATES_W-1:0]      state, state_nxt;
    reg                        error_int, error_nxt;
 
-   // dma ready to receive run command
+   // DMA ready
    reg                        dma_ready_nxt;
 
-   // register len and addr valid
-   reg [`AXI_LEN_W-1:0]       len_r;
    reg                        m_axi_arvalid_int;
 
-   // output error
+   // DMA register signals
+   reg [ADDR_W-1:0]           addr_reg;
+   reg [`AXI_LEN_W-1:0]       len_reg;
+
    assign error = error_int;
 
-   // Address read constants
+   // Read address
    assign m_axi_arid = `AXI_ID_W'b0;
-   assign m_axi_araddr = addr;
-   assign m_axi_arlen = len_r; // number of trasfers per burst
-   assign m_axi_arsize = axi_arsize; // INCR interval
-   assign m_axi_arburst = `AXI_BURST_W'b01; // INCR
+   assign m_axi_araddr = addr_reg;
+   assign m_axi_arlen = len_reg;
+   assign m_axi_arsize = axi_arsize;
+   assign m_axi_arburst = `AXI_BURST_W'd1;
    assign m_axi_arlock = `AXI_LOCK_W'b0;
-   assign m_axi_arcache = `AXI_CACHE_W'h2;
-   assign m_axi_arprot = `AXI_PROT_W'b010;
-   assign m_axi_arqos = `AXI_QOS_W'h0;
+   assign m_axi_arcache = `AXI_CACHE_W'd2;
+   assign m_axi_arprot = `AXI_PROT_W'd2;
+   assign m_axi_arqos = `AXI_QOS_W'd0;
 
-   // Data read constant
+   // Read
    assign rdata = m_axi_rdata;
 
-   // Counter, error, state and addr valid registers
+   // Counter, error and addr valid registers
    always @(posedge clk, posedge rst) begin
       if (rst) begin
-         state <= `R_ADDR_HS;
          counter_int <= `AXI_LEN_W'd0;
          error_int <= 1'b0;
-         m_axi_arvalid <= 1'b0;
          dma_ready <= 1'b1;
+         m_axi_arvalid <= 1'b0;
       end else begin
-         state <= state_nxt;
          counter_int <= counter_int_nxt;
          error_int <= error_nxt;
-         m_axi_arvalid <= m_axi_arvalid_int;
          dma_ready <= dma_ready_nxt;
+         m_axi_arvalid <= m_axi_arvalid_int;
       end
    end
 
-   // register len
+   // DMA registers
    always @(posedge clk, posedge rst) begin
       if (rst) begin
-         len_r <= `AXI_LEN_W'd0;
-      end else if (state == `R_ADDR_HS) begin
-         len_r <= dma_len;
+         addr_reg <= {ADDR_W{1'b0}};
+         len_reg <= `AXI_LEN_W'd0;
+      end else if (state == ADDR_HS) begin
+         addr_reg <= addr;
+         len_reg <= dma_len;
+      end
+   end
+
+   wire                       rst_valid_int = (state_nxt == ADDR_HS)? 1'b1: 1'b0;
+   reg                        arvalid_int;
+   always @(posedge clk) begin
+      if (rst_valid_int) begin
+         arvalid_int <= 1'b1;
+      end else if (m_axi_arready) begin
+         arvalid_int <= 1'b0;
+      end
+   end
+
+   //
+   // FSM
+   //
+
+   // State register
+   always @(posedge clk, posedge rst) begin
+      if (rst) begin
+         state <= ADDR_HS;
+      end else begin
+         state <= state_nxt;
       end
    end
 
    // State machine
    always @* begin
       state_nxt = state;
+
       error_nxt = error_int;
-      counter_int_nxt = counter_int;
-      ready = 1'b0;
       dma_ready_nxt = 1'b0;
+      counter_int_nxt = counter_int;
+
+      ready = 1'b0;
+
       m_axi_arvalid_int = 1'b0;
       m_axi_rready = 1'b0;
 
       case (state)
-        // addr handshake
-        `R_ADDR_HS: begin
+        // Read address handshake
+        ADDR_HS: begin
            counter_int_nxt = `AXI_LEN_W'd0;
            dma_ready_nxt = 1'b1;
 
            if (valid) begin
-              if (m_axi_arready) begin
-                 state_nxt = `R_DATA;
-              end
+              state_nxt = READ;
 
               m_axi_arvalid_int = 1'b1;
               dma_ready_nxt = 1'b0;
            end
         end
-        // data read
-        `R_DATA: begin
-           m_axi_rready = 1'b1;
+        // Read data
+        READ: begin
+           ready = m_axi_rvalid;
+
+           m_axi_arvalid_int = arvalid_int;
+           m_axi_rready = valid;
 
            if (m_axi_rvalid) begin
-              if (counter_int == len_r) begin
-                 if (m_axi_rlast) begin
-                    error_nxt = 1'b0;
-                 end else begin
-                    error_nxt = 1'b1;
-                 end
+              if (counter_int == len_reg) begin
+                 error_nxt = ~m_axi_rlast;
 
-                 state_nxt = `R_ADDR_HS;
+                 state_nxt = ADDR_HS;
               end
 
-              ready = 1'b1;
-              counter_int_nxt = counter_int + 1'b1;
+              if (valid) begin
+                 counter_int_nxt = counter_int + 1'b1;
+              end
            end
         end
       endcase
