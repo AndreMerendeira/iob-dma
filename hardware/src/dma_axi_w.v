@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
-
 `include "axi.vh"
 
-module dma_axi_w #(
-                   parameter ADDR_W = `AXI_ADDR_W,
-                   parameter DMA_DATA_W = 32,
-                   parameter USE_RAM = 1
-                   )
+module dma_axi_w 
+  #(
+    parameter ADDR_W = `AXI_ADDR_W,
+    parameter DMA_DATA_W = 32,
+    parameter USE_RAM = 1
+    )
    (
     input                         clk,
     input                         rst,
@@ -133,10 +133,10 @@ module dma_axi_w #(
    end
 
    // DMA registers
-   always @(posedge clk) begin
+   always @(posedge clk, posedge rst) begin
       if (rst) begin
-         addr_reg <= {ADDR_W{1'b0}};
-         len_reg <= `AXI_LEN_W'd0;
+         addr_reg <= 1'b0;
+         len_reg <= 1'b0;
       end else if (state == ADDR_HS) begin
          addr_reg <= addr;
          len_reg <= dma_len;
@@ -145,8 +145,11 @@ module dma_axi_w #(
 
    wire                           rst_valid_int = (state_nxt == ADDR_HS)? 1'b1: 1'b0;
    reg                            awvalid_int;
-   always @(posedge clk) begin
-      if (rst_valid_int) begin
+
+   always @(posedge clk, posedge rst) begin
+      if(rst)
+        awvalid_int <= 1'b0;
+      else if (rst_valid_int) begin
          awvalid_int <= 1'b1;
       end else if (m_axi_awready) begin
          awvalid_int <= 1'b0;

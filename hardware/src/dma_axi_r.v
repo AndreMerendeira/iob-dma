@@ -2,10 +2,11 @@
 
 `include "axi.vh"
 
-module dma_axi_r #(
-                   parameter ADDR_W = `AXI_ADDR_W,
-                   parameter DMA_DATA_W = 32
-                   )
+module dma_axi_r 
+  #(
+    parameter ADDR_W = `AXI_ADDR_W,
+    parameter DMA_DATA_W = 32
+    )
    (
     input                     clk,
     input                     rst,
@@ -106,17 +107,21 @@ module dma_axi_r #(
    always @(posedge clk, posedge rst) begin
       if (rst) begin
          addr_reg <= {ADDR_W{1'b0}};
-         len_reg <= `AXI_LEN_W'd0;
-      end else if (state == ADDR_HS) begin
-         addr_reg <= addr;
-         len_reg <= dma_len;
-      end
+      len_reg <= `AXI_LEN_W'd0;
+   end else if (state == ADDR_HS) begin
+      addr_reg <= addr;
+      len_reg <= dma_len;
+   end
    end
 
    wire                       rst_valid_int = (state_nxt == ADDR_HS)? 1'b1: 1'b0;
    reg                        arvalid_int;
-   always @(posedge clk) begin
-      if (rst_valid_int) begin
+   
+
+   always @(posedge clk, posedge rst) begin
+      if(rst)
+        arvalid_int <= 1'b0;
+      else if (rst_valid_int) begin
          arvalid_int <= 1'b1;
       end else if (m_axi_arready) begin
          arvalid_int <= 1'b0;
