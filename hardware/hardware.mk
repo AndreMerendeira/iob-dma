@@ -5,9 +5,6 @@ include $(DMA_DIR)/config.mk
 #add itself to HW_MODULES list
 HW_MODULES+=DMA
 
-#LIB
-include $(LIB_DIR)/hardware/hardware.mk
-
 #DMA HARDWARE
 
 # sources
