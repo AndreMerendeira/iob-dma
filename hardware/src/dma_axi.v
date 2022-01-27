@@ -17,7 +17,7 @@ module dma_axi
     //
     // AXI-4 Full Master I/F
     //
-`include "cpu_axi4_m_if.v"
+`include "cpu_axi4_m_if.vh"
 
     //
     // Native Slave I/F - can't include from INTERCON because address width = 6
