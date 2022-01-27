@@ -1,10 +1,12 @@
+ifeq ($(filter DMA, $(HW_MODULES)),)
+
 include $(DMA_DIR)/config.mk
 
-#add itself to MODULES list
-MODULES+=$(shell make -C $(DMA_DIR) corename | grep -v make)
+#add itself to HW_MODULES list
+HW_MODULES+=DMA
 
-#include submodule's hardware
-$(foreach p, $(SUBMODULES), $(if $(filter $p, $(MODULES)),,$(eval include $($p_DIR)/hardware/hardware.mk)))
+#LIB
+include $(LIB_DIR)/hardware/hardware.mk
 
 #DMA HARDWARE
 
@@ -12,3 +14,5 @@ $(foreach p, $(SUBMODULES), $(if $(filter $p, $(MODULES)),,$(eval include $($p_D
 VSRC+=$(DMA_SRC_DIR)/dma_axi.v
 VSRC+=$(DMA_SRC_DIR)/dma_axi_r.v
 VSRC+=$(DMA_SRC_DIR)/dma_axi_w.v
+
+endif

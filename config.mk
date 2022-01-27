@@ -1,5 +1,11 @@
+#
+# CONFIGURATIONS FILE
+#
+
+TOP_MODULE=iob_dma
+
 #PATHS
-REMOTE_ROOT_DIR ?=sandbox/iob-soc/submodules/DMA
+REMOTE_ROOT_DIR ?=sandbox/iob-dma
 DMA_HW_DIR:=$(DMA_DIR)/hardware
 DMA_INC_DIR:=$(DMA_HW_DIR)/include
 DMA_SRC_DIR:=$(DMA_HW_DIR)/src
@@ -7,11 +13,10 @@ DMA_SIM_DIR:=$(DMA_HW_DIR)/simulation
 SIM_DIR?=$(DMA_SIM_DIR)
 SUBMODULES_DIR:=$(DMA_DIR)/submodules
 
-#SUBMODULE PATHS
-SUBMODULES=
-SUBMODULE_DIRS=$(shell ls $(SUBMODULES_DIR))
-$(foreach d, $(SUBMODULE_DIRS), $(eval TMP=$(shell make -C $(SUBMODULES_DIR)/$d corename | grep -v make)) $(eval SUBMODULES+=$(TMP)) $(eval $(TMP)_DIR ?=$(SUBMODULES_DIR)/$d))
 
+# SUBMODULE PATHS
+SUBMODULES_DIR_LIST=$(shell ls $(SUBMODULES_DIR))
+$(foreach d, $(SUBMODULES_DIR_LIST), $(eval $d_DIR ?=$(SUBMODULES_DIR)/$d))
 
 #SIMULATION
 SIMULATOR ?=icarus
