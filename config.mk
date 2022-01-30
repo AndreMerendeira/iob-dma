@@ -2,7 +2,7 @@
 # CONFIGURATIONS FILE
 #
 
-TOP_MODULE=iob_dma
+TOP_MODULE ?=iob_dma
 
 #PATHS
 REMOTE_ROOT_DIR ?=sandbox/iob-dma
