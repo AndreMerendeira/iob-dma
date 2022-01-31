@@ -2,8 +2,7 @@
 # TOP MAKEFILE
 #
 
-DMA_DIR:=.
-include config.mk
+SIM_DIR=./hardware/simulation/icarus
 
 #
 # SIMULATE
