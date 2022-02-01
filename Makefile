@@ -2,11 +2,7 @@
 # TOP MAKEFILE
 #
 
-DMA_DIR:=.
-include config.mk
-
-corename:
-	@echo "DMA"
+SIM_DIR=./hardware/simulation/icarus
 
 #
 # SIMULATE
@@ -20,9 +16,10 @@ sim-waves:
 sim-clean:
 	make -C $(SIM_DIR) clean
 
+#
 # CLEAN ALL
+#
 clean-all: sim-clean
 
-.PHONY: corename
-	sim sim-waves sim-clean \
+.PHONY: sim sim-waves sim-clean \
 	clean-all

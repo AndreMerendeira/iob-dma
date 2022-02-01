@@ -1,14 +1,15 @@
-include $(DMA_DIR)/config.mk
+ifeq ($(filter DMA, $(HW_MODULES)),)
 
-#add itself to MODULES list
-MODULES+=$(shell make -C $(DMA_DIR) corename | grep -v make)
+LIB_DIR ?=$(DMA_DIR)/submodules/LIB
+include $(LIB_DIR)/hardware/hardware.mk
+include $(LIB_DIR)/hardware/iob2axi/hardware.mk
 
-#include submodule's hardware
-$(foreach p, $(SUBMODULES), $(if $(filter $p, $(MODULES)),,$(eval include $($p_DIR)/hardware/hardware.mk)))
+#add itself to HW_MODULES list
+HW_MODULES+=DMA
 
 #DMA HARDWARE
 
 # sources
-VSRC+=$(DMA_SRC_DIR)/dma_axi.v
-VSRC+=$(DMA_SRC_DIR)/dma_axi_r.v
-VSRC+=$(DMA_SRC_DIR)/dma_axi_w.v
+VSRC+=$(DMA_SRC_DIR)/iob_dma_axi.v
+
+endif
