@@ -11,7 +11,7 @@ sim:
 	make -C $(SIM_DIR) run
 
 sim-waves:
-	gtkwave $(SIM_DIR)/*.vcd &
+	gtkwave -a $(SIM_DIR)/../waves.gtkw $(SIM_DIR)/*.vcd &
 
 sim-clean:
 	make -C $(SIM_DIR) clean

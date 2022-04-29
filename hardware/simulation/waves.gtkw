@@ -1,0 +1,136 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sun Feb  6 00:56:33 2022
+[*]
+[dumpfile] "/home/zettasticks/IOBundle/iob-soc-eth/submodules/ETHERNET/submodules/DMA/hardware/simulation/icarus/uut.vcd"
+[dumpfile_mtime] "Sun Feb  6 00:56:25 2022"
+[dumpfile_size] 1702132
+[savefile] "/home/zettasticks/IOBundle/iob-soc-eth/submodules/ETHERNET/submodules/DMA/hardware/simulation/waves.gtkw"
+[timestart] 0
+[size] 1386 939
+[pos] 692 42
+*-32.000000 65560000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] iob_dma_tb.
+[treeopen] iob_dma_tb.uut.
+[sst_width] 378
+[signals_width] 281
+[sst_expanded] 1
+[sst_vpaned_height] 262
+@28
+iob_dma_tb.clk
+@200
+-STATE
+@22
+iob_dma_tb.uut.counter[7:0]
+@28
+iob_dma_tb.uut.direction
+iob_dma_tb.uut.last
+@22
+iob_dma_tb.uut.length[7:0]
+@28
+iob_dma_tb.uut.run
+iob_dma_tb.uut.running
+iob_dma_tb.uut.running_a_to_b
+iob_dma_tb.uut.running_b_to_a
+iob_dma_tb.uut.state[2:0]
+@200
+-A
+@22
+iob_dma_tb.a_addr[23:0]
+iob_dma_tb.a_rdata[31:0]
+@28
+iob_dma_tb.a_ready
+iob_dma_tb.a_valid
+@22
+iob_dma_tb.a_wdata[31:0]
+iob_dma_tb.a_wstrb[3:0]
+@200
+-B
+@22
+iob_dma_tb.b_addr[23:0]
+iob_dma_tb.b_rdata[31:0]
+@28
+iob_dma_tb.b_ready
+iob_dma_tb.b_valid
+@22
+iob_dma_tb.b_wdata[31:0]
+iob_dma_tb.b_wstrb[3:0]
+@200
+-A_TO_B
+@22
+iob_dma_tb.uut.a_to_b.data[31:0]
+iob_dma_tb.uut.a_to_b.data_in[31:0]
+iob_dma_tb.uut.a_to_b.data_out[31:0]
+@28
+iob_dma_tb.uut.a_to_b.data_valid
+iob_dma_tb.uut.a_to_b.last
+iob_dma_tb.uut.a_to_b.last_valid_in
+iob_dma_tb.uut.a_to_b.last_valid_out
+iob_dma_tb.uut.a_to_b.ready_in
+iob_dma_tb.uut.a_to_b.ready_out
+iob_dma_tb.uut.a_to_b.runningRead
+iob_dma_tb.uut.a_to_b.runningWrite
+iob_dma_tb.uut.a_to_b.start
+@22
+iob_dma_tb.uut.a_to_b.stored_data[31:0]
+@28
+iob_dma_tb.uut.a_to_b.stored_data_valid
+iob_dma_tb.uut.a_to_b.valid_in
+iob_dma_tb.uut.a_to_b.valid_out
+@200
+-B_TO_A
+@22
+iob_dma_tb.uut.b_to_a.data[31:0]
+iob_dma_tb.uut.b_to_a.data_in[31:0]
+iob_dma_tb.uut.b_to_a.data_out[31:0]
+@28
+iob_dma_tb.uut.b_to_a.valid_out
+@29
+iob_dma_tb.uut.b_to_a.data_valid
+@28
+iob_dma_tb.uut.b_to_a.ready_out
+iob_dma_tb.uut.b_to_a.stored_data_valid
+iob_dma_tb.uut.b_to_a.last
+iob_dma_tb.uut.b_to_a.last_valid_in
+iob_dma_tb.uut.b_to_a.last_valid_out
+iob_dma_tb.uut.b_to_a.ready_in
+iob_dma_tb.uut.b_to_a.runningRead
+iob_dma_tb.uut.b_to_a.runningWrite
+iob_dma_tb.uut.b_to_a.start
+@22
+iob_dma_tb.uut.b_to_a.stored_data[31:0]
+@28
+iob_dma_tb.uut.b_to_a.valid_in
+@200
+-ADDR_GEN
+@22
+iob_dma_tb.uut.address_gen.read_addr[23:0]
+iob_dma_tb.uut.address_gen.read_addr_reg[23:0]
+iob_dma_tb.uut.address_gen.read_addr_start[23:0]
+@28
+iob_dma_tb.uut.address_gen.read_ready
+iob_dma_tb.uut.address_gen.read_valid
+iob_dma_tb.uut.address_gen.start
+@22
+iob_dma_tb.uut.address_gen.write_addr[23:0]
+iob_dma_tb.uut.address_gen.write_addr_reg[23:0]
+iob_dma_tb.uut.address_gen.write_addr_start[23:0]
+@28
+iob_dma_tb.uut.address_gen.write_ready
+iob_dma_tb.uut.address_gen.write_valid
+@22
+iob_dma_tb.uut.address_gen.write_wstrb[3:0]
+@200
+-RAM_A
+@22
+iob_dma_tb.ram_A.addr[23:0]
+iob_dma_tb.ram_A.rdata[31:0]
+@28
+iob_dma_tb.ram_A.ready
+iob_dma_tb.ram_A.seenRequest
+iob_dma_tb.ram_A.valid
+@22
+iob_dma_tb.ram_A.wdata[31:0]
+iob_dma_tb.ram_A.wstrb[3:0]
+[pattern_trace] 1
+[pattern_trace] 0
