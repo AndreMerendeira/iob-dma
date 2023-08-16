@@ -64,7 +64,7 @@ module iob_dma # (
     .N(N_INPUTS),
   ) tready_in_demux (
     .sel_i(INTERFACE_NUM),
-    .data_i(axis_in_ready),
+    .data_i(axis_in_ready && (DIRECTION==1 ? 1'b1 : 1'b0)),
     .data_o(tready_o)
   );
 
@@ -96,6 +96,18 @@ module iob_dma # (
     .data_o(axis_out_ready)
   );
 
+  // Create a 1 clock pulse when new value is written to BASE_ADDR
+  wire BASE_ADDR_changed;
+  assign BASE_ADDR_wen = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
+  iob_pulse_gen #(
+    .START(1),
+    .DURATION(1),
+  ) BASE_ADDR_pulse_gen (
+    `include "clk_en_rst_s_s_portmap.vs"
+    .start_i(BASE_ADDR_wen),
+    .pulse_o(BASE_ADDR_changed)
+  );
+
   axis2axi #(
     .AXI_ADDR_W(AXI_ADDR_W),
     .AXI_DATA_W(AXI_DATA_W),
@@ -106,7 +118,7 @@ module iob_dma # (
   ) axis2axi_inst (
     // Configuration (AXIS In)
     .config_in_addr_i (BASE_ADDR),
-    .config_in_valid_i(DIRECTION==1 ? 1'b1 : 1'b0),
+    .config_in_valid_i(BASE_ADDR_changed),
     .config_in_ready_o(READY_W),
 
     // Configuration (AXIS Out)
