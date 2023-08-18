@@ -8,6 +8,8 @@ from iob_module import iob_module
 from iob_reg import iob_reg
 from iob_reg_e import iob_reg_e
 from axis2axi import axis2axi
+from iob_mux import iob_mux
+from iob_demux import iob_demux
 from iob_ram_2p import iob_ram_2p
 
 
@@ -28,6 +30,8 @@ class iob_dma(iob_module):
             iob_reg,
             iob_reg_e,
             axis2axi,
+            iob_mux,
+            iob_demux,
             (iob_ram_2p, {"purpose": "simulation"}),
             (iob_ram_2p, {"purpose": "fpga"}),
         ])
@@ -85,7 +89,7 @@ class iob_dma(iob_module):
             {
                 "name": "BUFFER_W",
                 "type": "P",
-                "val": "BURST_W+1",
+                "val": "1",  # BURST_W+1
                 "min": "0",
                 "max": "32",
                 "descr": "Buffer size",
@@ -203,12 +207,12 @@ class iob_dma(iob_module):
                 {
                     "name": "TRANSFER_SIZE_LOG2",
                     "type": "W",
-                    "n_bits": 16,
+                    "n_bits": 32,
                     "rst_val": 0,
                     "addr": -1,
                     "log2n_items": 0,
                     "autologic": True,
-                    "descr": "Amount of bytes to transfer from/to memory block",
+                    "descr": "Amount of bytes to transfer from/to memory block. Writing to this register will start the transfer. The other configuration registers should be set first: BASE_ADDR, DIRECTION, INTERFACE_NUM.",
                 },
                 {
                     "name": "DIRECTION",
