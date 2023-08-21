@@ -3,6 +3,8 @@
 `include "iob_dma_conf.vh"
 `include "iob_dma_swreg_def.vh"
 
+`define SEL_BITS(N) ($clog2(N)+($clog2(N)==0))-1:0
+
 module iob_dma # (
     `include "iob_dma_params.vs"
   ) (
@@ -45,7 +47,7 @@ module iob_dma # (
     .DATA_W(TDATA_W),
     .N(N_INPUTS)
   ) tdata_in_mux (
-    .sel_i(INTERFACE_NUM),
+    .sel_i(INTERFACE_NUM[`SEL_BITS(N_INPUTS)]),
     .data_i(tdata_i),
     .data_o(axis_in_data)
   );
@@ -54,7 +56,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_INPUTS)
   ) tvalid_in_mux (
-    .sel_i(INTERFACE_NUM),
+    .sel_i(INTERFACE_NUM[`SEL_BITS(N_INPUTS)]),
     .data_i(tvalid_i),
     .data_o(axis_in_valid)
   );
@@ -63,7 +65,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_INPUTS)
   ) tready_in_demux (
-    .sel_i(INTERFACE_NUM),
+    .sel_i(INTERFACE_NUM[`SEL_BITS(N_INPUTS)]),
     .data_i(axis_in_ready && receive_incomplete), // Stop ready feedback if receive is complete
     .data_o(tready_o)
   );
@@ -73,7 +75,7 @@ module iob_dma # (
     .DATA_W(TDATA_W),
     .N(N_OUTPUTS)
   ) tdata_out_demux (
-    .sel_i(INTERFACE_NUM),
+    .sel_i(INTERFACE_NUM[`SEL_BITS(N_OUTPUTS)]),
     .data_i(axis_out_data),
     .data_o(tdata_o)
   );
@@ -82,7 +84,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_OUTPUTS)
   ) tvalid_out_demux (
-    .sel_i(INTERFACE_NUM),
+    .sel_i(INTERFACE_NUM[`SEL_BITS(N_OUTPUTS)]),
     .data_i(axis_out_valid),
     .data_o(tvalid_o)
   );
@@ -91,7 +93,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_OUTPUTS)
   ) tready_out_mux (
-    .sel_i(INTERFACE_NUM),
+    .sel_i(INTERFACE_NUM[`SEL_BITS(N_OUTPUTS)]),
     .data_i(tready_i),
     .data_o(axis_out_ready)
   );
