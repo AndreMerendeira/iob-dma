@@ -66,7 +66,7 @@ module iob_dma # (
     .N(N_INPUTS)
   ) tready_in_demux (
     .sel_i(INTERFACE_NUM[`SEL_BITS(N_INPUTS)]),
-    .data_i(axis_in_ready && receive_incomplete), // Stop ready feedback if receive is complete
+    .data_i(axis_in_ready && receive_enabled), // Stop ready feedback if not receiving
     .data_o(tready_o)
   );
 
@@ -115,19 +115,31 @@ module iob_dma # (
   end
   wire base_addr_wen_pulse = base_addr_wen_delay_1 && ~base_addr_wen_delay_2;
 
-  // Create counter for words received via AXIS In
+  wire receive_enabled;
   wire [32-1:0] axis_in_cnt_o;
-  wire receive_incomplete;
+  iob_reg_e #(
+    .DATA_W(1),
+    .RST_VAL(0)
+  ) receive_enabled_reg (
+    .clk_i(clk_i),
+    .cke_i(cke_i),
+    // Reset when count reaches TRANSFER_SIZE
+    .arst_i(arst_i || axis_in_cnt_o == TRANSFER_SIZE_LOG2),
+    .en_i((DIRECTION==1 ? 1'b1 : 1'b0) && TRANSFER_SIZE_LOG2_wen),
+    .data_i(1'b1),
+    .data_o(receive_enabled)
+  );
+
+  // Create counter for words received via AXIS In
   iob_counter #(
     .DATA_W(32),
     .RST_VAL(0)
   ) axis_in_cnt (
     `include "clk_en_rst_s_s_portmap.vs"
-    .rst_i(TRANSFER_SIZE_LOG2_wen), // Reset when new transfer size is written (will start new transfer)
-    .en_i(axis_in_valid && axis_in_ready && receive_incomplete),
+    .rst_i(~receive_enabled),
+    .en_i(axis_in_valid && axis_in_ready),
     .data_o(axis_in_cnt_o)
   );
-  assign receive_incomplete = (DIRECTION==1 ? 1'b1 : 1'b0) && axis_in_cnt_o < TRANSFER_SIZE_LOG2;
 
   // Create a 1 clock pulse when new value is written to TRANSFER_SIZE_LOG2
   reg transfer_size_wen_delay_1;
@@ -164,7 +176,7 @@ module iob_dma # (
 
     // AXIS In
     .axis_in_data_i (axis_in_data),
-    .axis_in_valid_i(axis_in_valid & receive_incomplete), // Stop new valid values if receive is complete
+    .axis_in_valid_i(axis_in_valid & receive_enabled), // Stop new valid values if receive is complete
     .axis_in_ready_o(axis_in_ready),
     
     // AXIS Out
