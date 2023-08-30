@@ -52,12 +52,16 @@ class iob_soc_tester(iob_soc):
     # Create a Verilog instance of this module, named 'DMA0', and add it to the peripherals list of the system.
     cls.peripherals.append(
         iob_dma(
-            "DMA0",
-            "DMA interface",
+            "DMA0", # Verilog instance name
+            "DMA interface", # Instance description
             parameters={
+                # Set AXI interface parameters to connect to external memory.
+                "AXI_ID_W": "AXI_ID_W",
+                "AXI_LEN_W": "AXI_LEN_W",
+                "AXI_ADDR_W": "AXI_ADDR_W",
+                # Set number of AXI Stream interfaces to connect to other cores.
                 "N_INPUTS": "1",
                 "N_OUTPUTS": "1",
-                "AXI_ADDR_W": "AXI_ADDR_W",
             },
         )
     )
@@ -66,4 +70,22 @@ class iob_soc_tester(iob_soc):
 
 ## Brief description of C interface ##
 
-TODO
+An example of some C code is given, with explanations:
+
+```C
+// Set DMA base address and Verilog parameters
+dma_init(int base_address);
+
+// Start a DMA transfer
+// base_addr: Base address of external memory to start the data transfer.
+// size: Amount of 32-bit words to transfer.
+// direction: 0 = Read from memory, 1 = Write to memory.
+// interface_number: Which AXI Stream interface to use.
+dma_start_transfer(uint32_t *base_addr, uint32_t size, int direction, uint16_t interface_number);
+
+// Get the ready state of the selected AXIS In interface number
+uint8_t input_ready = dma_get_input_state(uint16_t interface_number);
+
+// Get the ready state of the selected AXIS Out interface number
+uint8_t output_ready = dma_get_output_state(uint16_t interface_number);
+```
