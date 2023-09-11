@@ -61,6 +61,7 @@ module iob_dma # (
     .data_o(axis_in_valid)
   );
 
+  wire receive_enabled;
   iob_demux #(
     .DATA_W(1),
     .N(N_INPUTS)
@@ -115,7 +116,6 @@ module iob_dma # (
   end
   wire base_addr_wen_pulse = base_addr_wen_delay_1 && ~base_addr_wen_delay_2;
 
-  wire receive_enabled;
   wire [32-1:0] axis_in_cnt_o;
   iob_reg_e #(
     .DATA_W(1),
