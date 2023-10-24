@@ -47,7 +47,7 @@ module iob_dma # (
     .DATA_W(TDATA_W),
     .N(N_INPUTS)
   ) tdata_in_mux (
-    .sel_i(INTERFACE_NUM[`SEL_BITS(N_INPUTS)]),
+    .sel_i(INTERFACE_NUM_w[`SEL_BITS(N_INPUTS)]),
     .data_i(tdata_i),
     .data_o(axis_in_data)
   );
@@ -56,7 +56,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_INPUTS)
   ) tvalid_in_mux (
-    .sel_i(INTERFACE_NUM[`SEL_BITS(N_INPUTS)]),
+    .sel_i(INTERFACE_NUM_w[`SEL_BITS(N_INPUTS)]),
     .data_i(tvalid_i),
     .data_o(axis_in_valid)
   );
@@ -66,7 +66,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_INPUTS)
   ) tready_in_demux (
-    .sel_i(INTERFACE_NUM[`SEL_BITS(N_INPUTS)]),
+    .sel_i(INTERFACE_NUM_w[`SEL_BITS(N_INPUTS)]),
     .data_i(axis_in_ready && receive_enabled), // Stop ready feedback if not receiving
     .data_o(tready_o)
   );
@@ -76,7 +76,7 @@ module iob_dma # (
     .DATA_W(TDATA_W),
     .N(N_OUTPUTS)
   ) tdata_out_demux (
-    .sel_i(INTERFACE_NUM[`SEL_BITS(N_OUTPUTS)]),
+    .sel_i(INTERFACE_NUM_w[`SEL_BITS(N_OUTPUTS)]),
     .data_i(axis_out_data),
     .data_o(tdata_o)
   );
@@ -85,7 +85,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_OUTPUTS)
   ) tvalid_out_demux (
-    .sel_i(INTERFACE_NUM[`SEL_BITS(N_OUTPUTS)]),
+    .sel_i(INTERFACE_NUM_w[`SEL_BITS(N_OUTPUTS)]),
     .data_i(axis_out_valid),
     .data_o(tvalid_o)
   );
@@ -94,7 +94,7 @@ module iob_dma # (
     .DATA_W(1),
     .N(N_OUTPUTS)
   ) tready_out_mux (
-    .sel_i(INTERFACE_NUM[`SEL_BITS(N_OUTPUTS)]),
+    .sel_i(INTERFACE_NUM_w[`SEL_BITS(N_OUTPUTS)]),
     .data_i(tready_i),
     .data_o(axis_out_ready)
   );
@@ -124,8 +124,8 @@ module iob_dma # (
     .clk_i(clk_i),
     .cke_i(cke_i),
     // Reset when count reaches TRANSFER_SIZE
-    .arst_i(arst_i || axis_in_cnt_o == TRANSFER_SIZE_LOG2),
-    .en_i((DIRECTION==1 ? 1'b1 : 1'b0) && TRANSFER_SIZE_LOG2_wen),
+    .arst_i(arst_i || axis_in_cnt_o == TRANSFER_SIZE_LOG2_w),
+    .en_i((DIRECTION_w==1 ? 1'b1 : 1'b0) && TRANSFER_SIZE_LOG2_wen),
     .data_i(1'b1),
     .data_o(receive_enabled)
   );
@@ -164,15 +164,15 @@ module iob_dma # (
     .BUFFER_W  (BUFFER_W)
   ) axis2axi_inst (
     // Configuration (AXIS In)
-    .config_in_addr_i (BASE_ADDR),
+    .config_in_addr_i (BASE_ADDR_w),
     .config_in_valid_i(base_addr_wen_pulse),
-    .config_in_ready_o(READY_W),
+    .config_in_ready_o(READY_W_r),
 
     // Configuration (AXIS Out)
-    .config_out_addr_i  (BASE_ADDR),
-    .config_out_length_i(TRANSFER_SIZE_LOG2), // Will start new transfer when a new size is set
-    .config_out_valid_i (transfer_size_wen_pulse && (DIRECTION==0 ? 1'b1 : 1'b0)),
-    .config_out_ready_o (READY_R),
+    .config_out_addr_i  (BASE_ADDR_w),
+    .config_out_length_i(TRANSFER_SIZE_LOG2_w), // Will start new transfer when a new size is set
+    .config_out_valid_i (transfer_size_wen_pulse && (DIRECTION_w==0 ? 1'b1 : 1'b0)),
+    .config_out_ready_o (READY_R_r),
 
     // AXIS In
     .axis_in_data_i (axis_in_data),
