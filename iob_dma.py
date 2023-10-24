@@ -201,7 +201,7 @@ class iob_dma(iob_module):
                     "rst_val": 0,
                     "addr": -1,
                     "log2n_items": 0,
-                    "autologic": True,
+                    "autoreg": True,
                     "descr": "Base address of memory block to start the transfer",
                 },
                 {
@@ -211,7 +211,7 @@ class iob_dma(iob_module):
                     "rst_val": 0,
                     "addr": -1,
                     "log2n_items": 0,
-                    "autologic": True,
+                    "autoreg": True,
                     "descr": "Amount of bytes to transfer from/to memory block. Writing to this register will start the transfer. The other configuration registers should be set first: BASE_ADDR, DIRECTION, INTERFACE_NUM.",
                 },
                 {
@@ -221,7 +221,7 @@ class iob_dma(iob_module):
                     "rst_val": 0,
                     "addr": -1,
                     "log2n_items": 0,
-                    "autologic": True,
+                    "autoreg": True,
                     "descr": "Transfer direction: 0:from memory to core, 1:from core to memory",
                 },
                 {
@@ -231,7 +231,7 @@ class iob_dma(iob_module):
                     "rst_val": 0,
                     "addr": -1,
                     "log2n_items": 0,
-                    "autologic": True,
+                    "autoreg": True,
                     "descr": "Interface number to tranfer data from/to.",
                 },
                 {
@@ -241,7 +241,7 @@ class iob_dma(iob_module):
                     "rst_val": 0,
                     "addr": -1,
                     "log2n_items": 0,
-                    "autologic": True,
+                    "autoreg": True,
                     "descr": "Ready for read transfer from memory.",
                 },
                 {
@@ -251,7 +251,7 @@ class iob_dma(iob_module):
                     "rst_val": 0,
                     "addr": -1,
                     "log2n_items": 0,
-                    "autologic": True,
+                    "autoreg": True,
                     "descr": "Ready for write transfer to memory.",
                 },
             ]}
