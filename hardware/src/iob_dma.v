@@ -174,13 +174,13 @@ module iob_dma # (
     .BUFFER_W  (BUFFER_W)
   ) axis2axi_inst (
     // Configuration (AXIS In)
-    .config_in_addr_i (BASE_ADDR_wr),
+    .config_in_addr_i (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
     .config_in_valid_i(base_addr_wen_pulse),
     .config_in_ready_o(READY_W_rd),
 
     // Configuration (AXIS Out)
-    .config_out_addr_i  (BASE_ADDR_wr),
-    .config_out_length_i(TRANSFER_SIZE_LOG2_wr), // Will start new transfer when a new size is set
+    .config_out_addr_i  (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
+    .config_out_length_i(TRANSFER_SIZE_LOG2_wr[AXI_ADDR_W-1:0]), // Will start new transfer when a new size is set
     .config_out_valid_i (transfer_size_wen_pulse && (DIRECTION_wr==0 ? 1'b1 : 1'b0)),
     .config_out_ready_o (READY_R_rd),
 
