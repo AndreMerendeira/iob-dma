@@ -89,3 +89,16 @@ uint8_t input_ready = dma_get_input_state(uint16_t interface_number);
 // Get the ready state of the selected AXIS Out interface number
 uint8_t output_ready = dma_get_output_state(uint16_t interface_number);
 ```
+
+# Acknowledgement
+The [OpenCryptoTester](https://nlnet.nl/project/OpenCryptoTester#ack) project is funded through the NGI Assure Fund, a fund established by NLnet
+with financial support from the European Commission's Next Generation Internet
+programme, under the aegis of DG Communications Networks, Content and Technology
+under grant agreement No 957073.
+
+<table>
+    <tr>
+        <td align="center" width="50%"><img src="https://nlnet.nl/logo/banner.svg" alt="NLnet foundation logo" style="width:90%"></td>
+        <td align="center"><img src="https://nlnet.nl/image/logos/NGIAssure_tag.svg" alt="NGI Assure logo" style="width:90%"></td>
+    </tr>
+</table>
