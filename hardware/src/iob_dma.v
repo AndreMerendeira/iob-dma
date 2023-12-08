@@ -110,7 +110,7 @@ module iob_dma # (
   );
 
   wire BASE_ADDR_wen_wr = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
-  wire TRANSFER_SIZE_LOG2_wen_wr = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_LOG2_ADDR);
+  wire TRANSFER_SIZE_wen_wr = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_ADDR);
   
   // Create a 1 clock pulse when new value is written to BASE_ADDR
   reg base_addr_wen_delay_1;
@@ -134,8 +134,8 @@ module iob_dma # (
     .clk_i(clk_i),
     .cke_i(cke_i),
     // Reset when count reaches TRANSFER_SIZE
-    .arst_i(arst_i || axis_in_cnt_o == TRANSFER_SIZE_LOG2_wr),
-    .en_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) && TRANSFER_SIZE_LOG2_wen_wr),
+    .arst_i(arst_i || axis_in_cnt_o == TRANSFER_SIZE_wr),
+    .en_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) && TRANSFER_SIZE_wen_wr),
     .data_i(1'b1),
     .data_o(receive_enabled)
   );
@@ -151,7 +151,7 @@ module iob_dma # (
     .data_o(axis_in_cnt_o)
   );
 
-  // Create a 1 clock pulse when new value is written to TRANSFER_SIZE_LOG2
+  // Create a 1 clock pulse when new value is written to TRANSFER_SIZE
   reg transfer_size_wen_delay_1;
   reg transfer_size_wen_delay_2;
   always @(posedge clk_i, posedge arst_i) begin
@@ -159,7 +159,7 @@ module iob_dma # (
        transfer_size_wen_delay_1 <= 0;
        transfer_size_wen_delay_2 <= 0;
     end else begin
-       transfer_size_wen_delay_1 <= TRANSFER_SIZE_LOG2_wen_wr;
+       transfer_size_wen_delay_1 <= TRANSFER_SIZE_wen_wr;
        transfer_size_wen_delay_2 <= transfer_size_wen_delay_1;
     end
   end
@@ -180,7 +180,7 @@ module iob_dma # (
 
     // Configuration (AXIS Out)
     .config_out_addr_i  (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
-    .config_out_length_i(TRANSFER_SIZE_LOG2_wr[AXI_ADDR_W-1:0]), // Will start new transfer when a new size is set
+    .config_out_length_i(TRANSFER_SIZE_wr[AXI_ADDR_W-1:0]), // Will start new transfer when a new size is set
     .config_out_valid_i (transfer_size_wen_pulse && (DIRECTION_wr==0 ? 1'b1 : 1'b0)),
     .config_out_ready_o (READY_R_rd),
 

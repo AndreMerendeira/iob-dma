@@ -204,7 +204,7 @@ class iob_dma(iob_module):
                     "descr": "Base address of memory block to start the transfer",
                 },
                 {
-                    "name": "TRANSFER_SIZE_LOG2",
+                    "name": "TRANSFER_SIZE",
                     "type": "W",
                     "n_bits": 32,
                     "rst_val": 0,
