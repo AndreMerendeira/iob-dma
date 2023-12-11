@@ -77,7 +77,7 @@ module iob_dma # (
     .N(N_INPUTS)
   ) tready_in_demux (
     .sel_i(INTERFACE_NUM_wr[`SEL_BITS(N_INPUTS)]),
-    .data_i(axis_in_ready && receive_enabled), // Stop ready feedback if not receiving
+    .data_i(axis_in_ready & receive_enabled), // Stop ready feedback if not receiving
     .data_o(tready_o)
   );
 
@@ -127,29 +127,17 @@ module iob_dma # (
   wire base_addr_wen_pulse = base_addr_wen_delay_1 && ~base_addr_wen_delay_2;
 
   wire [32-1:0] axis_in_cnt_o;
-  iob_reg_e #(
-    .DATA_W(1),
-    .RST_VAL(0)
-  ) receive_enabled_reg (
-    .clk_i(clk_i),
-    .cke_i(cke_i),
-    // Reset when count reaches TRANSFER_SIZE
-    .arst_i(arst_i || axis_in_cnt_o == TRANSFER_SIZE_wr),
-    .en_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) && TRANSFER_SIZE_wen_wr),
-    .data_i(1'b1),
-    .data_o(receive_enabled)
-  );
-
-  // Create counter for words received via AXIS In
   iob_counter #(
     .DATA_W(32),
     .RST_VAL(0)
   ) axis_in_cnt (
     `include "clk_en_rst_s_s_portmap.vs"
-    .rst_i(~receive_enabled),
-    .en_i(axis_in_valid && axis_in_ready),
+    .rst_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) & TRANSFER_SIZE_wen_wr),
+    .en_i(axis_in_valid & axis_in_ready & receive_enabled),
     .data_o(axis_in_cnt_o)
   );
+  assign receive_enabled = axis_in_cnt_o != TRANSFER_SIZE_wr;
+  assign READY_W_rd = ~receive_enabled;
 
   // Create a 1 clock pulse when new value is written to TRANSFER_SIZE
   reg transfer_size_wen_delay_1;
@@ -176,7 +164,7 @@ module iob_dma # (
     // Configuration (AXIS In)
     .config_in_addr_i (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
     .config_in_valid_i(base_addr_wen_pulse),
-    .config_in_ready_o(READY_W_rd),
+    .config_in_ready_o(),
 
     // Configuration (AXIS Out)
     .config_out_addr_i  (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
