@@ -126,6 +126,7 @@ module iob_dma # (
   end
   wire base_addr_wen_pulse = base_addr_wen_delay_1 && ~base_addr_wen_delay_2;
 
+  // Count number of words read via AXI Stream in
   wire [32-1:0] axis_in_cnt_o;
   iob_counter #(
     .DATA_W(32),
@@ -137,7 +138,8 @@ module iob_dma # (
     .data_o(axis_in_cnt_o)
   );
   assign receive_enabled = axis_in_cnt_o != TRANSFER_SIZE_wr;
-  assign READY_W_rd = ~receive_enabled;
+  wire transfer_complete;
+  assign READY_W_rd = ~receive_enabled & transfer_complete;
 
   // Create a 1 clock pulse when new value is written to TRANSFER_SIZE
   reg transfer_size_wen_delay_1;
@@ -164,7 +166,7 @@ module iob_dma # (
     // Configuration (AXIS In)
     .config_in_addr_i (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
     .config_in_valid_i(base_addr_wen_pulse),
-    .config_in_ready_o(),
+    .config_in_ready_o(transfer_complete),
 
     // Configuration (AXIS Out)
     .config_out_addr_i  (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
