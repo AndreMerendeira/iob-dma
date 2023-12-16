@@ -13,7 +13,7 @@ module iob_dma # (
 
    `include "iob_wire.vs"
 
-   assign iob_avalid = iob_avalid_i;
+   assign iob_valid = iob_valid_i;
    assign iob_addr = iob_addr_i;
    assign iob_wdata = iob_wdata_i;
    assign iob_wstrb = iob_wstrb_i;
@@ -109,8 +109,8 @@ module iob_dma # (
     .data_o(axis_out_ready)
   );
 
-  wire BASE_ADDR_wen_wr = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
-  wire TRANSFER_SIZE_wen_wr = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_ADDR);
+  wire BASE_ADDR_wen_wr = (iob_valid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
+  wire TRANSFER_SIZE_wen_wr = (iob_valid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_ADDR);
   
   // Create a 1 clock pulse when new value is written to BASE_ADDR
   reg base_addr_wen_delay_1;
