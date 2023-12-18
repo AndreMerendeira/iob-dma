@@ -126,21 +126,6 @@ module iob_dma # (
   end
   wire base_addr_wen_pulse = base_addr_wen_delay_1 && ~base_addr_wen_delay_2;
 
-  // Count number of words read via AXI Stream in
-  wire [32-1:0] axis_in_cnt_o;
-  iob_counter #(
-    .DATA_W(32),
-    .RST_VAL(0)
-  ) axis_in_cnt (
-    `include "clk_en_rst_s_s_portmap.vs"
-    .rst_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) & TRANSFER_SIZE_wen_wr),
-    .en_i(axis_in_valid & axis_in_ready & receive_enabled),
-    .data_o(axis_in_cnt_o)
-  );
-  assign receive_enabled = axis_in_cnt_o != TRANSFER_SIZE_wr;
-  wire transfer_complete;
-  assign READY_W_rd = ~receive_enabled & transfer_complete;
-
   // Create a 1 clock pulse when new value is written to TRANSFER_SIZE
   reg transfer_size_wen_delay_1;
   reg transfer_size_wen_delay_2;
@@ -154,6 +139,32 @@ module iob_dma # (
     end
   end
   wire transfer_size_wen_pulse = transfer_size_wen_delay_1 && ~transfer_size_wen_delay_2;
+
+  wire [32-1:0] receive_transfer_size;
+  iob_reg_e #(
+    .DATA_W (32),
+    .RST_VAL(0)
+  ) receive_transfer_size_reg (
+    `include "clk_en_rst_s_s_portmap.vs"
+    .en_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) & transfer_size_wen_delay_1),
+    .data_i(TRANSFER_SIZE_wr),
+    .data_o(receive_transfer_size)
+  );
+
+  // Count number of words read via AXI Stream in
+  wire [32-1:0] axis_in_cnt_o;
+  iob_counter #(
+    .DATA_W(32),
+    .RST_VAL(0)
+  ) axis_in_cnt (
+    `include "clk_en_rst_s_s_portmap.vs"
+    .rst_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) & transfer_size_wen_delay_1),
+    .en_i(axis_in_valid & axis_in_ready & receive_enabled),
+    .data_o(axis_in_cnt_o)
+  );
+  assign receive_enabled = axis_in_cnt_o != receive_transfer_size;
+  wire transfer_complete;
+  assign READY_W_rd = ~receive_enabled & transfer_complete;
 
   axis2axi #(
     .AXI_ADDR_W(AXI_ADDR_W),

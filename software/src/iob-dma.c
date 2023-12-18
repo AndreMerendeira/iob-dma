@@ -22,6 +22,6 @@ void dma_start_transfer(uint32_t *base_addr, uint32_t size, int direction, uint1
 
 // Check if DMA is ready for new transfer
 uint8_t dma_transfer_ready(){
-  return (IOB_DMA_GET_READY_W() || IOB_DMA_GET_READY_R());
+  return (IOB_DMA_GET_READY_W() && IOB_DMA_GET_READY_R());
 }
 
