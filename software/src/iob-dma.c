@@ -16,19 +16,12 @@ void dma_start_transfer(uint32_t *base_addr, uint32_t size, int direction, uint1
   IOB_DMA_SET_BASE_ADDR((uint32_t)base_addr);
   IOB_DMA_SET_DIRECTION(direction);
   IOB_DMA_SET_INTERFACE_NUM(interface_number);
-  // Settiing the transfer size will begin the transfer
-  IOB_DMA_SET_TRANSFER_SIZE_LOG2(size);
+  // Setting the transfer size will begin the transfer
+  IOB_DMA_SET_TRANSFER_SIZE(size);
 }
 
-// Get the ready state of the selected AXIS In interface number
-uint8_t dma_get_input_state(uint16_t interface_number){
-  IOB_DMA_SET_INTERFACE_NUM(interface_number);
-  return IOB_DMA_GET_READY_R();
-}
-
-// Get the ready state of the selected AXIS Out interface number
-uint8_t dma_get_output_state(uint16_t interface_number){
-  IOB_DMA_SET_INTERFACE_NUM(interface_number);
-  return IOB_DMA_GET_READY_W();
+// Check if DMA is ready for new transfer
+uint8_t dma_transfer_ready(){
+  return (IOB_DMA_GET_READY_W() && IOB_DMA_GET_READY_R());
 }
 

@@ -13,7 +13,7 @@ module iob_dma # (
 
    `include "iob_wire.vs"
 
-   assign iob_avalid = iob_avalid_i;
+   assign iob_valid = iob_valid_i;
    assign iob_addr = iob_addr_i;
    assign iob_wdata = iob_wdata_i;
    assign iob_wstrb = iob_wstrb_i;
@@ -77,7 +77,7 @@ module iob_dma # (
     .N(N_INPUTS)
   ) tready_in_demux (
     .sel_i(INTERFACE_NUM_wr[`SEL_BITS(N_INPUTS)]),
-    .data_i(axis_in_ready && receive_enabled), // Stop ready feedback if not receiving
+    .data_i(axis_in_ready & receive_enabled), // Stop ready feedback if not receiving
     .data_o(tready_o)
   );
 
@@ -109,8 +109,8 @@ module iob_dma # (
     .data_o(axis_out_ready)
   );
 
-  wire BASE_ADDR_wen_wr = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
-  wire TRANSFER_SIZE_LOG2_wen_wr = (iob_avalid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_LOG2_ADDR);
+  wire BASE_ADDR_wen_wr = (iob_valid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
+  wire TRANSFER_SIZE_wen_wr = (iob_valid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_ADDR);
   
   // Create a 1 clock pulse when new value is written to BASE_ADDR
   reg base_addr_wen_delay_1;
@@ -126,32 +126,7 @@ module iob_dma # (
   end
   wire base_addr_wen_pulse = base_addr_wen_delay_1 && ~base_addr_wen_delay_2;
 
-  wire [32-1:0] axis_in_cnt_o;
-  iob_reg_e #(
-    .DATA_W(1),
-    .RST_VAL(0)
-  ) receive_enabled_reg (
-    .clk_i(clk_i),
-    .cke_i(cke_i),
-    // Reset when count reaches TRANSFER_SIZE
-    .arst_i(arst_i || axis_in_cnt_o == TRANSFER_SIZE_LOG2_wr),
-    .en_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) && TRANSFER_SIZE_LOG2_wen_wr),
-    .data_i(1'b1),
-    .data_o(receive_enabled)
-  );
-
-  // Create counter for words received via AXIS In
-  iob_counter #(
-    .DATA_W(32),
-    .RST_VAL(0)
-  ) axis_in_cnt (
-    `include "clk_en_rst_s_s_portmap.vs"
-    .rst_i(~receive_enabled),
-    .en_i(axis_in_valid && axis_in_ready),
-    .data_o(axis_in_cnt_o)
-  );
-
-  // Create a 1 clock pulse when new value is written to TRANSFER_SIZE_LOG2
+  // Create a 1 clock pulse when new value is written to TRANSFER_SIZE
   reg transfer_size_wen_delay_1;
   reg transfer_size_wen_delay_2;
   always @(posedge clk_i, posedge arst_i) begin
@@ -159,11 +134,37 @@ module iob_dma # (
        transfer_size_wen_delay_1 <= 0;
        transfer_size_wen_delay_2 <= 0;
     end else begin
-       transfer_size_wen_delay_1 <= TRANSFER_SIZE_LOG2_wen_wr;
+       transfer_size_wen_delay_1 <= TRANSFER_SIZE_wen_wr;
        transfer_size_wen_delay_2 <= transfer_size_wen_delay_1;
     end
   end
   wire transfer_size_wen_pulse = transfer_size_wen_delay_1 && ~transfer_size_wen_delay_2;
+
+  wire [32-1:0] receive_transfer_size;
+  iob_reg_e #(
+    .DATA_W (32),
+    .RST_VAL(0)
+  ) receive_transfer_size_reg (
+    `include "clk_en_rst_s_s_portmap.vs"
+    .en_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) & transfer_size_wen_delay_1),
+    .data_i(TRANSFER_SIZE_wr),
+    .data_o(receive_transfer_size)
+  );
+
+  // Count number of words read via AXI Stream in
+  wire [32-1:0] axis_in_cnt_o;
+  iob_counter #(
+    .DATA_W(32),
+    .RST_VAL(0)
+  ) axis_in_cnt (
+    `include "clk_en_rst_s_s_portmap.vs"
+    .rst_i((DIRECTION_wr==1 ? 1'b1 : 1'b0) & transfer_size_wen_delay_1),
+    .en_i(axis_in_valid & axis_in_ready & receive_enabled),
+    .data_o(axis_in_cnt_o)
+  );
+  assign receive_enabled = axis_in_cnt_o != receive_transfer_size;
+  wire transfer_complete;
+  assign READY_W_rd = ~receive_enabled & transfer_complete;
 
   axis2axi #(
     .AXI_ADDR_W(AXI_ADDR_W),
@@ -176,11 +177,11 @@ module iob_dma # (
     // Configuration (AXIS In)
     .config_in_addr_i (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
     .config_in_valid_i(base_addr_wen_pulse),
-    .config_in_ready_o(READY_W_rd),
+    .config_in_ready_o(transfer_complete),
 
     // Configuration (AXIS Out)
     .config_out_addr_i  (BASE_ADDR_wr[AXI_ADDR_W-1:0]),
-    .config_out_length_i(TRANSFER_SIZE_LOG2_wr[AXI_ADDR_W-1:0]), // Will start new transfer when a new size is set
+    .config_out_length_i(TRANSFER_SIZE_wr[AXI_ADDR_W-1:0]), // Will start new transfer when a new size is set
     .config_out_valid_i (transfer_size_wen_pulse && (DIRECTION_wr==0 ? 1'b1 : 1'b0)),
     .config_out_ready_o (READY_R_rd),
 
