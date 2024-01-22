@@ -11,20 +11,6 @@ module iob_dma # (
     `include "iob_dma_io.vs"
   );
 
-   `include "iob_wire.vs"
-
-   assign iob_valid = iob_valid_i;
-   assign iob_addr = iob_addr_i;
-   assign iob_wdata = iob_wdata_i;
-   assign iob_wstrb = iob_wstrb_i;
-   assign iob_rvalid_o = iob_rvalid;
-   assign iob_rdata_o = iob_rdata;
-   assign iob_ready_o = iob_ready;
-
-   //Dummy iob_ready_nxt_o and iob_rvalid_nxt_o to be used in swreg (unused ports)
-   wire iob_ready_nxt;
-   wire iob_rvalid_nxt;
-
   //BLOCK Register File & Configuration control and status register file.
   `include "iob_dma_swreg_inst.vs"
 
@@ -109,8 +95,8 @@ module iob_dma # (
     .data_o(axis_out_ready)
   );
 
-  wire BASE_ADDR_wen_wr = (iob_valid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
-  wire TRANSFER_SIZE_wen_wr = (iob_valid_i) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_ADDR);
+  wire BASE_ADDR_wen_wr = (iob_valid_i & iob_ready_o) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_BASE_ADDR_ADDR);
+  wire TRANSFER_SIZE_wen_wr = (iob_valid_i & iob_ready_o) & ((|iob_wstrb_i) & iob_addr_i==`IOB_DMA_TRANSFER_SIZE_ADDR);
   
   // Create a 1 clock pulse when new value is written to BASE_ADDR
   reg base_addr_wen_delay_1;
