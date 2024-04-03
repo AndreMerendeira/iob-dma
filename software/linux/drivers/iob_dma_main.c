@@ -201,19 +201,11 @@ static void iob_dma_vm_close(struct vm_area_struct *vma) {
 static int iob_dma_open(struct inode *inode, struct file *file) {
   pr_info("[Driver] iob_dma device opened\n");
 
-  if (!mutex_trylock(&iob_dma_mutex)) {
-    pr_info("Another process is accessing the device\n");
-
-    return -EBUSY;
-  }
-
   return 0;
 }
 
 static int iob_dma_release(struct inode *inode, struct file *file) {
   pr_info("[Driver] iob_dma device closed\n");
-
-  mutex_unlock(&iob_dma_mutex);
 
   return 0;
 }
