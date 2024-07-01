@@ -262,7 +262,7 @@ static int iob_dma_mmap(struct file *file, struct vm_area_struct *vma) {
     physical_addr = (void *) virt_to_phys(virtual_addr);
     iob_data_write_reg(iob_dma_data.regbase, (uint32_t) physical_addr, IOB_DMA_BASE_ADDR_ADDR,
                        IOB_DMA_BASE_ADDR_W);
-    pr_info("[Driver] BASE_ADDR iob_dma: %p\n", physical_addr);
+    pr_info("[Driver] BASE_ADDR iob_dma: %px\n", physical_addr);
     
     // Store order in the lower bits that are guaranteed to be zero
     // because virtual_mem is page aligned
