@@ -21,6 +21,7 @@ module iob_dma # (
   assign axi_araddr_o = internal_axi_araddr_o + MEM_ADDR_OFFSET;
 
   // External memory interfaces
+  wire                  ext_mem_clk;
   wire [         1-1:0] ext_mem_w_en;
   wire [AXI_DATA_W-1:0] ext_mem_w_data;
   wire [  BUFFER_W-1:0] ext_mem_w_addr;
@@ -223,6 +224,7 @@ module iob_dma # (
     .axi_rready_o(axi_rready_o), //Read channel ready.
 
     // External memory interfaces
+    .ext_mem_clk_o   (ext_mem_clk),
     .ext_mem_w_en_o  (ext_mem_w_en),
     .ext_mem_w_data_o(ext_mem_w_data),
     .ext_mem_w_addr_o(ext_mem_w_addr),
@@ -241,7 +243,7 @@ module iob_dma # (
     .DATA_W(AXI_DATA_W),
     .ADDR_W(BUFFER_W)
   ) axis2axi_memory (
-    .clk_i   (clk_i),
+    .clk_i   (ext_mem_clk),
     .w_en_i  (ext_mem_w_en),
     .w_data_i(ext_mem_w_data),
     .w_addr_i(ext_mem_w_addr),
